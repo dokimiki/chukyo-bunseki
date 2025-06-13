@@ -18,7 +18,7 @@ interface InvestigationResult {
 function App() {
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({
     url: "https://manabo.cnc.chukyo-u.ac.jp/auth/shibboleth/",
-    name: "中京大学manaba",
+    name: "中京大学manabo",
     username: "",
     password: "",
   });

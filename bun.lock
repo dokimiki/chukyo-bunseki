@@ -48,6 +48,7 @@
         "@opentelemetry/auto-instrumentations-node": "^0.40.0",
         "@opentelemetry/exporter-jaeger": "^1.17.0",
         "@opentelemetry/sdk-node": "^0.44.0",
+        "playwright": "^1.40.0",
         "ws": "^8.14.0",
       },
       "devDependencies": {

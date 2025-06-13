@@ -18,15 +18,67 @@ export class GeminiService {
     console.log("🤖 Generating report with Gemini...");
 
     const prompt = this.buildPrompt(explorationData);
+    console.log("📝 Prompt prepared, calling Gemini API...");
 
     try {
-      const result = await this.model.generateContent(prompt);
+      // タイムアウト処理を追加
+      const timeout = new Promise((_, reject) => {
+        setTimeout(
+          () => reject(new Error("Gemini API timeout after 60 seconds")),
+          60000
+        );
+      });
+
+      const apiCall = this.model.generateContent(prompt);
+
+      console.log("⏳ Waiting for Gemini response...");
+      const result = await Promise.race([apiCall, timeout]);
+
+      console.log("📨 Received response from Gemini, extracting text...");
       const response = await result.response;
-      return response.text();
+      const reportText = response.text();
+
+      console.log("✅ Report generated successfully");
+      console.log(`📊 Report length: ${reportText.length} characters`);
+
+      return reportText;
     } catch (error) {
       console.error("❌ Gemini API error:", error);
-      throw new Error(`Failed to generate report: ${(error as Error).message}`);
+      console.error("❌ Error details:", (error as Error).stack);
+
+      // フォールバック用の基本レポートを生成
+      console.log("🔄 Generating fallback report...");
+      return this.generateFallbackReport(explorationData);
     }
+  }
+
+  private generateFallbackReport(explorationData: any): string {
+    console.log("📋 Creating fallback report...");
+
+    return `# 調査レポート (簡易版)
+
+## 概要
+サイト調査が完了しましたが、AI分析で問題が発生したため、基本的な情報のみを表示します。
+
+## 調査結果
+
+### サイト情報
+- URL: ${explorationData.domStructure?.[0]?.page || "不明"}
+- ログイン成功: ${explorationData.loginSuccess ? "はい" : "いいえ"}
+- 取得したスクリーンショット数: ${explorationData.screenshots?.length || 0}
+
+### 発見されたフォーム
+${explorationData.domStructure?.[0]?.elements?.filter((e: any) => e.type === "form").length || 0}個のフォームが見つかりました。
+
+### APIエンドポイント
+${explorationData.apiEndpoints?.length || 0}個のAPIエンドポイントが検出されました。
+
+### エラー情報
+${explorationData.errorLogs?.length > 0 ? explorationData.errorLogs.join("\n- ") : "エラーなし"}
+
+## 注意
+これは簡易版のレポートです。詳細な分析については、Gemini APIの設定を確認してください。
+`;
   }
 
   private buildPrompt(data: any): string {
@@ -69,7 +121,7 @@ Generate a comprehensive Japanese Markdown report with the following sections:
 ## DOM構造分析
 ### 主要要素
 - 重要なフォーム要素
-- ナビゲーション構造  
+- ナビゲーション構造
 - データ表示エリア
 
 ### 自動化用セレクタ

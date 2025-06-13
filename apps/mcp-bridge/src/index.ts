@@ -23,8 +23,25 @@ import { WebSocketServer } from "ws";
 
 console.log("🚀 MCP Bridge starting...");
 
-const PORT = 3001;
-const wss = new WebSocketServer({ port: PORT });
+const PORT = Number(process.env.PORT) || 3001;
+
+// ポートが使用中の場合のエラーハンドリング
+const wss = new WebSocketServer({
+  port: PORT,
+  host: "localhost",
+});
+
+wss.on("error", (error: any) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(
+      `❌ Port ${PORT} is already in use. Please stop other MCP Bridge instances.`
+    );
+    process.exit(1);
+  } else {
+    console.error("❌ WebSocket server error:", error);
+    throw error;
+  }
+});
 
 const mcpClient = new MCPClient();
 const geminiService = new GeminiService();
@@ -85,24 +102,37 @@ async function handleSiteInvestigation(ws: any, data: any, parentSpan: any) {
     console.log("🔍 Starting site investigation:", data.siteUrl);
 
     // MCPでサイト探索
+    console.log("📡 Sending progress update: MCPクライアントに接続中...");
     ws.send(
       JSON.stringify({
         type: "progress",
         message: "MCPクライアントに接続中...",
       })
     );
-    await mcpClient.connect();
 
+    console.log("🔌 Connecting to MCP client...");
+    await mcpClient.connect();
+    console.log("✅ MCP client connected successfully");
+
+    console.log("📡 Sending progress update: サイトにログイン中...");
     ws.send(
       JSON.stringify({ type: "progress", message: "サイトにログイン中..." })
     );
+
+    console.log("🌐 Starting site exploration...");
     const explorationData = await mcpClient.exploreSite(data);
+    console.log("✅ Site exploration completed");
 
     // Geminiで分析
+    console.log("📡 Sending progress update: AI分析中...");
     ws.send(JSON.stringify({ type: "progress", message: "AI分析中..." }));
+
+    console.log("🤖 Starting Gemini analysis...");
     const report = await geminiService.generateReport(explorationData);
+    console.log("✅ Gemini analysis completed");
 
     // 結果返送
+    console.log("📤 Sending investigation results...");
     ws.send(
       JSON.stringify({
         type: "investigation-complete",
@@ -115,10 +145,28 @@ async function handleSiteInvestigation(ws: any, data: any, parentSpan: any) {
     );
 
     console.log("✅ Investigation completed successfully");
+
+    // 成功時もブラウザをクリーンアップ
+    try {
+      await mcpClient.disconnect();
+      console.log("🧹 Browser cleanup completed");
+    } catch (cleanupError) {
+      console.error("❌ Browser cleanup failed:", cleanupError);
+    }
   } catch (error) {
     span.recordException(error as Error);
     span.setStatus({ code: SpanStatusCode.ERROR });
     console.error("❌ Investigation failed:", error);
+    console.error("❌ Error stack:", (error as Error).stack);
+
+    // ブラウザをクリーンアップ
+    try {
+      await mcpClient.disconnect();
+      console.log("🧹 Browser cleanup completed");
+    } catch (cleanupError) {
+      console.error("❌ Browser cleanup failed:", cleanupError);
+    }
+
     ws.send(
       JSON.stringify({
         type: "error",
@@ -131,3 +179,20 @@ async function handleSiteInvestigation(ws: any, data: any, parentSpan: any) {
 }
 
 console.log(`🌟 MCP Bridge ready on ws://localhost:${PORT}`);
+
+// グレースフルシャットダウン
+process.on("SIGINT", () => {
+  console.log("🛑 Shutting down MCP Bridge...");
+  wss.close(() => {
+    console.log("✅ MCP Bridge shutdown complete");
+    process.exit(0);
+  });
+});
+
+process.on("SIGTERM", () => {
+  console.log("🛑 Shutting down MCP Bridge...");
+  wss.close(() => {
+    console.log("✅ MCP Bridge shutdown complete");
+    process.exit(0);
+  });
+});

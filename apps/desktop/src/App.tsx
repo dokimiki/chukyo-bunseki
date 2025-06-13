@@ -36,8 +36,14 @@ function App() {
     setResult(null);
 
     try {
-      // MCP Bridge起動
-      await invoke("start_mcp_bridge");
+      // MCP Bridgeのヘルスチェック
+      try {
+        await invoke("check_mcp_bridge");
+      } catch (error) {
+        throw new Error(
+          "MCP Bridgeが起動していません。プロジェクトルートで 'bun run dev' を実行してください。"
+        );
+      }
 
       // サイト調査実行
       const investigationResult = await invoke<InvestigationResult>(

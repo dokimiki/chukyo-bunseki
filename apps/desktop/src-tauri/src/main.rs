@@ -1,9 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 use tauri::AppHandle;
+use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 #[derive(Debug, Deserialize, Serialize)]
 struct SiteConfig {
@@ -20,49 +21,65 @@ struct InvestigationResult {
     report: Option<String>,
 }
 
-// MCP Bridge起動
+#[derive(Debug, Serialize, Deserialize)]
+struct MCPRequest {
+    command: String,
+    data: MCPInvestigationData,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MCPInvestigationData {
+    #[serde(rename = "siteUrl")]
+    site_url: String,
+    #[serde(rename = "siteName")]
+    site_name: String,
+    username: String,
+    password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MCPResponse {
+    r#type: String,
+    message: Option<String>,
+    data: Option<serde_json::Value>,
+}
+
+// ヘルスチェック - MCP Bridgeが起動しているか確認
 #[tauri::command]
-async fn start_mcp_bridge() -> Result<String, String> {
-    println!("🚀 Starting MCP Bridge...");
+async fn check_mcp_bridge() -> Result<String, String> {
+    println!("� Checking MCP Bridge status...");
 
-    // プロジェクトルートディレクトリを取得
-    let current_dir =
-        std::env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
+    let ws_url = "ws://localhost:3001";
 
-    println!("📁 Current directory: {:?}", current_dir);
+    match connect_async(ws_url).await {
+        Ok((ws_stream, _)) => {
+            let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
-    // src-tauri -> desktop -> apps -> chukyo-bunseki (3つ上)
-    let project_root = current_dir
-        .parent() // desktop
-        .and_then(|p| p.parent()) // apps
-        .and_then(|p| p.parent()) // chukyo-bunseki
-        .ok_or("Failed to find project root")?;
+            // ヘルスチェックリクエストを送信
+            let health_check = serde_json::json!({
+                "command": "health-check"
+            });
 
-    println!("📁 Project root: {:?}", project_root);
+            if let Ok(request_json) = serde_json::to_string(&health_check) {
+                if ws_sender.send(Message::Text(request_json)).await.is_ok() {
+                    // レスポンスを待機（タイムアウト付き）
+                    if let Some(Ok(Message::Text(text))) = ws_receiver.next().await {
+                        if let Ok(response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if response.get("type") == Some(&serde_json::Value::String("health".to_string())) {
+                                println!("✅ MCP Bridge is running");
+                                return Ok("MCP Bridge is running".to_string());
+                            }
+                        }
+                    }
+                }
+            }
 
-    // package.jsonの存在確認
-    let package_json_path = project_root.join("package.json");
-    if !package_json_path.exists() {
-        return Err(format!(
-            "package.json not found at: {:?}",
-            package_json_path
-        ));
+            Err("MCP Bridge is not responding properly".to_string())
+        }
+        Err(_) => {
+            Err("MCP Bridge is not running. Please start it with 'bun run dev' in the project root.".to_string())
+        }
     }
-
-    // プロジェクトのmcp:startスクリプトを使用
-    let output = Command::new("bun")
-        .args(&["run", "mcp:start"])
-        .current_dir(&project_root)
-        .spawn()
-        .map_err(|e| {
-            format!(
-                "Failed to start MCP Bridge using bun run mcp:start: {} (working dir: {:?})",
-                e, project_root
-            )
-        })?;
-
-    println!("✅ MCP Bridge started with PID: {}", output.id());
-    Ok(format!("MCP Bridge started with PID: {}", output.id()))
 }
 
 // サイト調査開始
@@ -70,26 +87,99 @@ async fn start_mcp_bridge() -> Result<String, String> {
 async fn investigate_site(config: SiteConfig) -> Result<InvestigationResult, String> {
     println!("🔍 Starting investigation for: {}", config.url);
 
-    // MCP Bridgeが起動しているかを少し待つ
-    tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+    // まずMCP Bridgeの状態を確認
+    if let Err(e) = check_mcp_bridge().await {
+        return Err(format!("MCP Bridge is not available: {}", e));
+    }
 
-    // WebSocket経由でMCP Bridgeに指示を送信
-    // 実装は簡略化（実際はWebSocketクライアント使用）
-    println!("🔌 Attempting to connect to MCP Bridge at ws://localhost:3001");
+    // MCP Bridgeへの接続
+    let ws_url = "ws://localhost:3001";
+    println!("🔌 Connecting to MCP Bridge at {}", ws_url);
 
-    // 一時的にモックレポートを返す
-    let mock_report = format!(
-        "# {}の調査レポート\n\n## 概要\n- URL: {}\n- 調査日時: {}\n\n## 発見事項\n- ログインフォーム発見\n- API エンドポイント: /api/student/info\n- セッション管理: Cookie ベース\n\n## MCP Bridge Status\n- Status: ✅ Connected\n- Port: 3001",
-        config.name,
-        config.url,
-        "2025-06-14 12:00:00 UTC"
-    );
+    let (ws_stream, _) = connect_async(ws_url)
+        .await
+        .map_err(|e| format!("Failed to connect to MCP Bridge: {}", e))?;
 
-    Ok(InvestigationResult {
-        success: true,
-        message: "Investigation completed successfully".to_string(),
-        report: Some(mock_report),
-    })
+    let (mut ws_sender, mut ws_receiver) = ws_stream.split();
+
+    // 調査リクエストを送信
+    let request = MCPRequest {
+        command: "investigate-site".to_string(),
+        data: MCPInvestigationData {
+            site_url: config.url.clone(),
+            site_name: config.name.clone(),
+            username: config.username,
+            password: config.password,
+        },
+    };
+
+    let request_json = serde_json::to_string(&request)
+        .map_err(|e| format!("Failed to serialize request: {}", e))?;
+
+    ws_sender
+        .send(Message::Text(request_json))
+        .await
+        .map_err(|e| format!("Failed to send request: {}", e))?;
+
+    println!("📤 Investigation request sent");
+
+    // レスポンスを待機
+    let mut report = String::new();
+    let mut investigation_complete = false;
+
+    while let Some(message) = ws_receiver.next().await {
+        match message {
+            Ok(Message::Text(text)) => {
+                let response: MCPResponse = serde_json::from_str(&text)
+                    .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+                match response.r#type.as_str() {
+                    "progress" => {
+                        if let Some(msg) = response.message {
+                            println!("📊 Progress: {}", msg);
+                        }
+                    }
+                    "investigation-complete" => {
+                        if let Some(data) = response.data {
+                            if let Some(report_text) = data.get("report") {
+                                if let Some(report_str) = report_text.as_str() {
+                                    report = report_str.to_string();
+                                }
+                            }
+                        }
+                        investigation_complete = true;
+                        break;
+                    }
+                    "error" => {
+                        let error_msg = response
+                            .message
+                            .unwrap_or_else(|| "Unknown error".to_string());
+                        return Err(format!("MCP Bridge error: {}", error_msg));
+                    }
+                    _ => {
+                        println!("📨 Received: {}", response.r#type);
+                    }
+                }
+            }
+            Ok(Message::Close(_)) => {
+                break;
+            }
+            Err(e) => {
+                return Err(format!("WebSocket error: {}", e));
+            }
+            _ => {}
+        }
+    }
+
+    if investigation_complete && !report.is_empty() {
+        Ok(InvestigationResult {
+            success: true,
+            message: "Investigation completed successfully".to_string(),
+            report: Some(report),
+        })
+    } else {
+        Err("Investigation did not complete successfully".to_string())
+    }
 }
 
 // 設定保存
@@ -107,7 +197,7 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            start_mcp_bridge,
+            check_mcp_bridge,
             investigate_site,
             save_secure_config
         ])

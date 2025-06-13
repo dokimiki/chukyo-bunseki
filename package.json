@@ -1,0 +1,31 @@
+{
+  "name": "chukyo-bunseki",
+  "version": "0.1.0",
+  "private": true,
+  "description": "学生ポータルリサーチエージェント - Student Portal Research Agent",
+  "scripts": {
+    "dev": "concurrently \"bun run mcp:start\" \"bun run desktop:dev\"",
+    "build": "bun run desktop:build",
+    "desktop:dev": "cd apps/desktop && bun run tauri dev",
+    "desktop:build": "cd apps/desktop && bun run tauri build",
+    "mcp:start": "cd apps/mcp-bridge && bun run dev",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "lint": "eslint .",
+    "format": "prettier --write . && cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml",
+    "format:check": "prettier --check . && cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --check",
+    "format:js": "prettier --write .",
+    "format:rust": "cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml",
+    "trace:ui": "playwright show-trace"
+  },
+  "workspaces": ["apps/*", "packages/*"],
+  "devDependencies": {
+    "@playwright/test": "^1.53.0",
+    "@types/hapi__shot": "^6.0.0",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.28.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  }
+}

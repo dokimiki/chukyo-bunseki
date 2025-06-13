@@ -1,0 +1,23 @@
+{
+  "name": "@chukyo-bunseki/mcp-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js"
+  },
+  "dependencies": {
+    "@chukyo-bunseki/shared": "workspace:*",
+    "@google/generative-ai": "^0.15.0",
+    "@opentelemetry/api": "^1.6.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.40.0",
+    "@opentelemetry/exporter-jaeger": "^1.17.0",
+    "@opentelemetry/sdk-node": "^0.44.0",
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.0.0"
+  }
+}

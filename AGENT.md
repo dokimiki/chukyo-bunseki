@@ -7,7 +7,7 @@
 ## 1. 目的
 
 > 学生ポータルサイトの画面遷移・API・DOM 構造・認証方式を解析し、
-> *「自動ログイン」「成績・履修情報取得」「通知監視」* などを自動化するための技術調査レポート（Markdown）を生成する。
+> _「自動ログイン」「成績・履修情報取得」「通知監視」_ などを自動化するための技術調査レポート（Markdown）を生成する。
 
 ---
 
@@ -24,8 +24,8 @@ Gemini-->>Bun Sidecar: Markdown レポート
 Bun Sidecar-->>GUI: render(report)
 ```
 
-* **Playwright-MCP** は複数ブラウザで安定した自動化を提供し、探索用のアクセシビリティスナップショット API を備える。
-* **Gemini** はサーバーサイド SDK 経由で呼び出し、トークン上限とレート制限を考慮する。
+- **Playwright-MCP** は複数ブラウザで安定した自動化を提供し、探索用のアクセシビリティスナップショット API を備える。
+- **Gemini** はサーバーサイド SDK 経由で呼び出し、トークン上限とレート制限を考慮する。
 
 ---
 
@@ -39,19 +39,19 @@ Bun Sidecar-->>GUI: render(report)
       "name": "mcp.playwright",
       "description": "Browser automation for exploration",
       "timeout_ms": 45000,
-      "session_id": "student-portal"
+      "session_id": "student-portal",
     },
     {
       "name": "mcp.puppeteer",
       "description": "Fallback automation (Chromium only)",
       "timeout_ms": 45000,
-      "session_id": "student-portal"
+      "session_id": "student-portal",
     },
     {
       "name": "gemini.generate",
-      "description": "Generate investigation report"
-    }
-  ]
+      "description": "Generate investigation report",
+    },
+  ],
 }
 ```
 
@@ -128,9 +128,9 @@ OUTPUT: Markdown only.
 
 ## 9. 法的・倫理ガイドライン
 
-* 大学の利用規約を確認し、**スクレイピング許可の有無**を調査。
-* 著作権物の複製に該当する場合は「私的複製」「教育目的の Fair Use」かを検討。
-* 大量アクセスによる可用性影響を避けるため、**crawl-delay** とトラフィック上限を守る。
+- 大学の利用規約を確認し、**スクレイピング許可の有無**を調査。
+- 著作権物の複製に該当する場合は「私的複製」「教育目的の Fair Use」かを検討。
+- 大量アクセスによる可用性影響を避けるため、**crawl-delay** とトラフィック上限を守る。
 
 ---
 

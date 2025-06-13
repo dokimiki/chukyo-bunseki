@@ -1,0 +1,46 @@
+# Ignore artifacts:
+build/
+dist/
+target/
+.vscode/
+.idea/
+
+# Ignore generated files
+node_modules/
+*.lock
+*.log
+coverage/
+
+# Ignore binary files
+*.exe
+*.pdb
+*.ico
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore specific files
+CACHEDIR.TAG
+Cargo.lock
+bun.lock
+
+# Ignore Tauri specific
+src-tauri/target/
+src-tauri/icons/
+
+# Ignore environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

@@ -16,8 +16,7 @@
         "playwright:install": "bunx playwright install"
     },
     "dependencies": {
-        "playwright": "^1.53.0",
-        "@chukyo-bunseki/requirements-agent": "workspace:*"
+        "playwright": "^1.53.0"
     },
     "devDependencies": {
         "@playwright/test": "^1.53.0",

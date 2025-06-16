@@ -1,6 +1,6 @@
 import { ChkyuoAutomationWorker, PageInfo } from "./automation.js";
 import { ChkyuoPortalWorker } from "./portal.js";
-import { RequirementsInput, generateRequirements } from "@chukyo-bunseki/requirements-agent";
+import { RequirementsInput, generateRequirements } from "../../requirements-agent/src/agent.js";
 
 export interface PageAnalysisResult {
     pageInfo: PageInfo;

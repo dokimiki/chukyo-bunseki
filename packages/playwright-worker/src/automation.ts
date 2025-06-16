@@ -38,7 +38,7 @@ export class ChkyuoAutomationWorker {
      */
     async initialize(): Promise<void> {
         const envHeadless = envBoolean("HEADLESS", true);
-        const { stateFile = "state.json", slowMo = 100, headless = envHeadless } = this.options;
+        const { stateFile = process.env.STATE_FILE ?? "state.json", slowMo = 100, headless = envHeadless } = this.options;
 
         this.context = await createAuthenticatedContext(stateFile, headless);
         this.page = await this.context.newPage();

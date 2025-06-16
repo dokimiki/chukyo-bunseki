@@ -56,7 +56,6 @@
       "name": "@chukyo-bunseki/playwright-worker",
       "version": "1.0.0",
       "dependencies": {
-        "@chukyo-bunseki/requirements-agent": "workspace:*",
         "playwright": "^1.53.0",
       },
       "devDependencies": {

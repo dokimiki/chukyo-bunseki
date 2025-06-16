@@ -254,17 +254,7 @@ const validateCommand = command({
             allValid = false;
         }
 
-        // Check MCP service dependencies
-        try {
-            const mcpModule = await import("@chukyo-bunseki/mcp-service/src/mcp-server.js");
-            console.log("✅ MCP Service: Available");
-        } catch (error) {
-            console.log("❌ MCP Service: Not available");
-            if (verbose) {
-                console.log(`   Error: ${error}`);
-            }
-            allValid = false;
-        }
+
 
         // Check cache
         console.log(`✅ Cache: ${requirementsCache.size()} entries`);

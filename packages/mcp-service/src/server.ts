@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import express from "express";
 import compression from "compression";
 import cors from "cors";
@@ -92,6 +93,7 @@ async function analyzePageStructure(page: any, pageType: ManaboPageType): Promis
         return selectors;
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const actions = await page.evaluate((type: ManaboPageType) => {
         const actions: any[] = [];
 
@@ -363,7 +365,8 @@ app.get("/health", (req, res) => {
 });
 
 // Error handling middleware
-app.use((error: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error("Unhandled error:", error);
     res.status(500).json({
         error: "Internal server error",

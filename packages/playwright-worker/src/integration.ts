@@ -1,4 +1,4 @@
-import { ChkyuoAutomationWorker, PageInfo } from "./automation.js";
+import { PageInfo } from "./automation.js";
 import { ChkyuoPortalWorker } from "./portal.js";
 import { RequirementsInput, generateRequirements } from "../../requirements-agent/src/agent.js";
 
@@ -81,7 +81,7 @@ export class ChkyuoIntegrationWorker {
     /**
      * Perform an action and analyze the resulting page
      */
-    async actionAndAnalyze(action: () => Promise<any>): Promise<PageAnalysisResult> {
+    async actionAndAnalyze(action: () => Promise<unknown>): Promise<PageAnalysisResult> {
         try {
             // Perform the action
             await action();

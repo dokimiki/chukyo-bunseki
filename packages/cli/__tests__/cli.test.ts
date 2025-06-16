@@ -1,12 +1,10 @@
-/* eslint-disable functional/no-class */
-
 import { test, expect, describe } from "bun:test";
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
+import { exec } from "child_process";
+import { promisify } from "util";
+import path from "path";
 
 const execAsync = promisify(exec);
-const cliPath = path.join('packages', 'cli', 'dist', 'index.js');
+const cliPath = path.join("packages", "cli", "dist", "index.js");
 
 describe("CLI Integration Tests", () => {
     test("CLI should show help", async () => {
@@ -17,7 +15,7 @@ describe("CLI Integration Tests", () => {
             expect(stdout).toContain("validate");
             expect(stdout).toContain("cache");
             expect(stdout).toContain("config");
-        } catch (error: any) {
+        } catch (error) {
             // cmd-ts exits with code 1 for help, which is expected
             // Check that we still got the help output
             expect(error.stdout).toContain("Chukyo University analysis tools");
@@ -32,7 +30,7 @@ describe("CLI Integration Tests", () => {
         try {
             const { stdout } = await execAsync(`bun run ${cliPath} validate`);
             expect(stdout).toContain("Validating environment");
-        } catch (error: any) {
+        } catch (error) {
             // Command might exit with code 1 due to missing API key, which is expected
             expect(error.stdout).toContain("Validating environment");
         }
@@ -55,7 +53,7 @@ describe("CLI Integration Tests", () => {
     test("CLI analyze command should show proper error without URL", async () => {
         try {
             await execAsync(`bun run ${cliPath} analyze`);
-        } catch (error: any) {
+        } catch (error) {
             expect(error.stdout).toContain("URL is required");
         }
     });
@@ -63,7 +61,7 @@ describe("CLI Integration Tests", () => {
     test("CLI should handle invalid subcommands gracefully", async () => {
         try {
             await execAsync(`bun run ${cliPath} invalid-command`);
-        } catch (error: any) {
+        } catch (error) {
             expect(error.code).toBe(1);
         }
     });

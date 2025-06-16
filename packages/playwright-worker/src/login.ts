@@ -20,7 +20,7 @@ export interface LoginResult {
  * Saves session state to state.json on success
  */
 export async function loginToChukyoManabo(options: LoginOptions): Promise<LoginResult> {
-    const envHeadless = envBoolean('HEADLESS', true);
+    const envHeadless = envBoolean("HEADLESS", true);
     const { username, password, headless = envHeadless, slowMo = 100, timeout = 30000 } = options;
 
     let browser: Browser | null = null;
@@ -96,13 +96,36 @@ export async function loginToChukyoManabo(options: LoginOptions): Promise<LoginR
 /**
  * Create a new browser context with saved state
  */
-export async function createAuthenticatedContext(stateFile = "state.json", headless = envBoolean('HEADLESS', true)): Promise<BrowserContext> {
+export async function createAuthenticatedContext(stateFile = "state.json", headless = envBoolean("HEADLESS", true)): Promise<BrowserContext> {
+    // Check if state file exists
+    const fs = await import("fs/promises");
+    try {
+        await fs.access(stateFile);
+    } catch (error) {
+        throw new Error(
+            `Error reading storage state from ${stateFile}:\n${
+                error instanceof Error ? error.message : "Unknown error"
+            }\n\nPlease run login first using: ./chukyo-cli login -u <username> -p <password>`
+        );
+    }
+
     const browser = await chromium.launch({
         headless,
     });
-    const context = await browser.newContext({
-        storageState: stateFile,
-    });
+
+    let context: BrowserContext;
+    try {
+        context = await browser.newContext({
+            storageState: stateFile,
+        });
+    } catch (error) {
+        await browser.close();
+        throw new Error(
+            `Failed to create context with storage state from ${stateFile}:\n${
+                error instanceof Error ? error.message : "Unknown error"
+            }\n\nPlease run login first using: ./chukyo-cli login -u <username> -p <password>`
+        );
+    }
 
     await context.tracing.start({
         screenshots: true,

@@ -1,5 +1,3 @@
-/* eslint-disable functional/no-class */
-
 import { test, expect, describe } from "bun:test";
 import { ManaboPageType, type ManaboPageAnalysis, type ManaboPageStructure } from "../src/types/manabo.ts";
 

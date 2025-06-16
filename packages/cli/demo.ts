@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-/* eslint-disable functional/no-class */
 
 /**
  * Demo script for chukyo-cli

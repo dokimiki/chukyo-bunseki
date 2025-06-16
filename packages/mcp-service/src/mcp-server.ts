@@ -1,6 +1,4 @@
 #!/usr/bin/env bun
-/* eslint-disable functional/no-class */
-
 /**
  * MCP Server entry point for Manabo analysis
  * This server provides tools for analyzing Manabo page structures via Model Context Protocol

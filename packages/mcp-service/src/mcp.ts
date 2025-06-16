@@ -1,9 +1,8 @@
-/* eslint-disable functional/no-class */
-
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, type CallToolRequest, type CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { createAuthenticatedContext } from "@chukyo-bunseki/playwright-worker";
+import { createAuthenticatedContext, loginToChukyo } from "@chukyo-bunseki/playwright-worker";
+import { type BrowserContext, type Page } from "playwright";
 import {
     type AnalyzeManaboPageArgs,
     type AnalyzeManaboPageResult,
@@ -20,7 +19,7 @@ import {
  */
 export class ManaboMCPServer {
     private server: Server;
-    private globalContext: any = null;
+    private globalContext: BrowserContext | null = null;
 
     constructor() {
         this.server = new Server(
@@ -85,11 +84,31 @@ export class ManaboMCPServer {
     private async analyzeManaboPage(args: AnalyzeManaboPageArgs): Promise<CallToolResult> {
         try {
             if (!this.globalContext) {
-                this.globalContext = await createAuthenticatedContext();
+                this.globalContext = await this.ensureAuthenticated();
             }
 
-            const page = await this.globalContext.newPage();
-            await page.goto(args.url);
+            let page = await this.globalContext.newPage();
+
+            // Check if we need to login by testing page access
+            try {
+                await page.goto(args.url);
+                // If we reach a login page or get redirected, re-authenticate
+                if (page.url().includes("auth") || page.url().includes("login") || page.url().includes("shibboleth")) {
+                    console.error("Authentication required, re-authenticating...");
+                    await this.globalContext.close();
+                    this.globalContext = await this.ensureAuthenticated();
+                    await page.close();
+                    page = await this.globalContext.newPage();
+                    await page.goto(args.url);
+                }
+            } catch (error) {
+                console.error("Page access failed, attempting re-authentication:", error);
+                await this.globalContext?.close();
+                this.globalContext = await this.ensureAuthenticated();
+                await page.close();
+                page = await this.globalContext.newPage();
+                await page.goto(args.url);
+            }
             await page.waitForTimeout(2000); // Wait for dynamic content
 
             const title = await page.title();
@@ -181,7 +200,7 @@ export class ManaboMCPServer {
         return ManaboPageType.OTHER;
     }
 
-    private async analyzePageStructure(page: any, pageType: ManaboPageType): Promise<ManaboPageStructure> {
+    private async analyzePageStructure(page: Page, pageType: ManaboPageType): Promise<ManaboPageStructure> {
         // Common selectors for all Manabo pages
         const commonSelectors = await page.evaluate(() => {
             const selectors: Record<string, string> = {};
@@ -229,7 +248,7 @@ export class ManaboMCPServer {
 
         // Page-specific analysis
         const actions = await this.extractActions(page, pageType);
-        const dataElements = await this.extractDataElements(page, pageType);
+        const dataElements = await this.extractDataElements(page);
         const navigation = await this.extractNavigation(page);
 
         return {
@@ -240,9 +259,14 @@ export class ManaboMCPServer {
         };
     }
 
-    private async extractActions(page: any, pageType: ManaboPageType): Promise<ManaboAction[]> {
-        return await page.evaluate((type: ManaboPageType) => {
-            const actions: any[] = [];
+    private async extractActions(page: Page, pageType: ManaboPageType): Promise<ManaboAction[]> {
+        return await page.evaluate(() => {
+            const actions: Array<{
+                type: "click" | "form" | "navigation";
+                selector: string;
+                description: string;
+                required?: boolean;
+            }> = [];
 
             // Common actions
             const submitButtons = document.querySelectorAll('button[type="submit"], input[type="submit"]');
@@ -260,9 +284,14 @@ export class ManaboMCPServer {
         }, pageType);
     }
 
-    private async extractDataElements(page: any, pageType: ManaboPageType): Promise<ManaboDataElement[]> {
+    private async extractDataElements(page: Page): Promise<ManaboDataElement[]> {
         return await page.evaluate(() => {
-            const dataElements: any[] = [];
+            const dataElements: Array<{
+                type: "text" | "list" | "table" | "link" | "date";
+                selector: string;
+                description: string;
+                example?: string;
+            }> = [];
 
             // Common data elements
             const headings = document.querySelectorAll("h1, h2, h3");
@@ -282,9 +311,14 @@ export class ManaboMCPServer {
         });
     }
 
-    private async extractNavigation(page: any): Promise<ManaboNavigation[]> {
+    private async extractNavigation(page: Page): Promise<ManaboNavigation[]> {
         return await page.evaluate(() => {
-            const navigation: any[] = [];
+            const navigation: Array<{
+                label: string;
+                selector: string;
+                url?: string;
+                description: string;
+            }> = [];
 
             // Main navigation
             const navLinks = document.querySelectorAll("nav a, .navigation a, .nav-menu a");
@@ -320,6 +354,47 @@ export class ManaboMCPServer {
         if (this.globalContext) {
             await this.globalContext.close();
             this.globalContext = null;
+        }
+    }
+
+    /**
+     * Ensure we have an authenticated context, attempting auto-login if needed
+     * @returns Authenticated browser context
+     * @throws Error if authentication fails and no credentials are available
+     */
+    private async ensureAuthenticated(): Promise<BrowserContext> {
+        try {
+            // First try to create context with existing state
+            return await createAuthenticatedContext();
+        } catch {
+            console.error("No existing authentication state, attempting auto-login...");
+
+            // Try to get credentials from environment variables
+            const username = process.env.CHUKYO_USERNAME;
+            const password = process.env.CHUKYO_PASSWORD;
+
+            if (!username || !password) {
+                throw new Error(
+                    "Authentication required but no saved state found and no credentials provided.\n" +
+                        "Please either:\n" +
+                        "1. Run login first using the CLI: ./chukyo-cli login -u <username> -p <password>\n" +
+                        "2. Set environment variables: CHUKYO_USERNAME and CHUKYO_PASSWORD"
+                );
+            }
+
+            console.error(`Attempting login for user: ${username}`);
+            const loginResult = await loginToChukyo({
+                username,
+                password,
+                headless: true,
+            });
+
+            if (!loginResult.success) {
+                throw new Error(`Login failed: ${loginResult.message}`);
+            }
+
+            console.error("Login successful, creating authenticated context...");
+            return await createAuthenticatedContext();
         }
     }
 }

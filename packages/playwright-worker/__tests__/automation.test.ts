@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { ChkyuoAutomationWorker, ChkyuoPortalWorker } from "../src/index.js";
+import { ChkyuoAutomationWorker } from "../src/index.js";
 
 describe("Automation Worker", () => {
     test("should initialize without authentication for basic functionality", () => {
@@ -30,13 +30,21 @@ describe("Automation Worker", () => {
 
 describe("Data structures", () => {
     test("should handle empty course list", () => {
-        const courses: any[] = [];
+        const courses: Array<{
+            id: string;
+            title: string;
+            instructor: string;
+        }> = [];
         expect(Array.isArray(courses)).toBe(true);
         expect(courses.length).toBe(0);
     });
 
     test("should handle empty announcement list", () => {
-        const announcements: any[] = [];
+        const announcements: Array<{
+            id: string;
+            title: string;
+            content: string;
+        }> = [];
         expect(Array.isArray(announcements)).toBe(true);
         expect(announcements.length).toBe(0);
     });

@@ -8,7 +8,7 @@
         "chukyo-cli": "dist/index.js"
     },
     "scripts": {
-        "build": "bun build src/index.ts --outdir=dist --target=bun --external=@chukyo-bunseki/requirements-agent",
+        "build": "bun build src/index.ts --outdir=dist --target=bun --external=@chukyo-bunseki/requirements-agent --external=@chukyo-bunseki/playwright-worker --external=playwright",
         "dev": "bun run src/index.ts",
         "demo": "bun demo.ts",
         "test": "bun test --coverage"

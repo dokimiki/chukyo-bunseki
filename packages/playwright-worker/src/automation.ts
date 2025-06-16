@@ -1,4 +1,4 @@
-import { BrowserContext, Page, Locator } from "playwright";
+import { BrowserContext, Page } from "playwright";
 import { createAuthenticatedContext } from "./login.js";
 import { envBoolean } from "./utils.js";
 
@@ -13,7 +13,7 @@ export interface PageInfo {
     url: string;
     title: string;
     domContent: string;
-    networkLogs: any[];
+    networkLogs: unknown[];
     screenshot?: string;
 }
 
@@ -29,7 +29,7 @@ export interface ActionResult {
 export class ChkyuoAutomationWorker {
     private context: BrowserContext | null = null;
     private page: Page | null = null;
-    private networkLogs: any[] = [];
+    private networkLogs: unknown[] = [];
 
     constructor(private options: AutomationOptions = {}) {}
 
@@ -37,7 +37,7 @@ export class ChkyuoAutomationWorker {
      * Initialize the automation worker with authenticated context
      */
     async initialize(): Promise<void> {
-        const envHeadless = envBoolean('HEADLESS', true);
+        const envHeadless = envBoolean("HEADLESS", true);
         const { stateFile = "state.json", slowMo = 100, headless = envHeadless } = this.options;
 
         this.context = await createAuthenticatedContext(stateFile, headless);
@@ -212,7 +212,7 @@ export class ChkyuoAutomationWorker {
         try {
             const element = await this.page.$(selector);
             return element !== null;
-        } catch (error) {
+        } catch {
             return false;
         }
     }

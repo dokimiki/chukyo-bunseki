@@ -1,6 +1,4 @@
-/* eslint-disable functional/no-class */
-
-import { test, expect, describe, beforeAll, afterAll } from "bun:test";
+import { test, expect, describe } from "bun:test";
 import { generateRequirements, generateBatchRequirements, RequirementsCache } from "../src/agent.ts";
 import { ManaboPageType } from "@chukyo-bunseki/mcp-service/src/types/manabo.js";
 

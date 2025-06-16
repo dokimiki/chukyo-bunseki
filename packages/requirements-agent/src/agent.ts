@@ -1,13 +1,12 @@
-/* eslint-disable functional/no-class */
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import type {
-  ManaboPageAnalysis,
-  ManaboPageType,
-  ManaboPageStructure,
-  ManaboAction,
-  ManaboDataElement,
-  ManaboNavigation,
+import {
+    ManaboPageAnalysis,
+    ManaboPageType,
+    ManaboPageStructure,
+    ManaboAction,
+    ManaboDataElement,
+    ManaboNavigation,
 } from "@chukyo-bunseki/mcp-service/src/types/manabo.js";
 import { createAuthenticatedContext } from "@chukyo-bunseki/playwright-worker";
 import type { Page } from "playwright";
@@ -32,25 +31,25 @@ export interface ChunkOptions {
  * Detect Manabo page type based on URL and title
  */
 function detectPageType(url: string, title: string): ManaboPageType {
-    if (url.includes('/course/') || title.includes('科目') || title.includes('Course')) {
+    if (url.includes("/course/") || title.includes("科目") || title.includes("Course")) {
         return ManaboPageType.COURSES;
     }
-    if (url.includes('/assignment') || title.includes('課題') || title.includes('Assignment')) {
+    if (url.includes("/assignment") || title.includes("課題") || title.includes("Assignment")) {
         return ManaboPageType.ASSIGNMENTS;
     }
-    if (url.includes('/syllabus') || title.includes('シラバス') || title.includes('Syllabus')) {
+    if (url.includes("/syllabus") || title.includes("シラバス") || title.includes("Syllabus")) {
         return ManaboPageType.SYLLABUS;
     }
-    if (url.includes('/grade') || title.includes('成績') || title.includes('Grade')) {
+    if (url.includes("/grade") || title.includes("成績") || title.includes("Grade")) {
         return ManaboPageType.GRADES;
     }
-    if (url.includes('/announcement') || title.includes('お知らせ') || title.includes('連絡')) {
+    if (url.includes("/announcement") || title.includes("お知らせ") || title.includes("連絡")) {
         return ManaboPageType.ANNOUNCEMENTS;
     }
-    if (url.includes('/timetable') || title.includes('時間割') || title.includes('Time')) {
+    if (url.includes("/timetable") || title.includes("時間割") || title.includes("Time")) {
         return ManaboPageType.TIMETABLE;
     }
-    if (url === 'https://manabo.cnc.chukyo-u.ac.jp' || url.includes('/top') || title.includes('ホーム')) {
+    if (url === "https://manabo.cnc.chukyo-u.ac.jp" || url.includes("/top") || title.includes("ホーム")) {
         return ManaboPageType.TOP;
     }
     return ManaboPageType.OTHER;
@@ -63,7 +62,7 @@ async function extractActions(page: Page, pageType: ManaboPageType): Promise<Man
         submitButtons.forEach((button, index) => {
             const text = button.textContent?.trim() || `Submit button ${index + 1}`;
             actions.push({
-                type: 'click',
+                type: "click",
                 selector: `button[type="submit"]:nth-of-type(${index + 1}), input[type="submit"]:nth-of-type(${index + 1})`,
                 description: `Submit action: ${text}`,
                 required: true,
@@ -76,12 +75,12 @@ async function extractActions(page: Page, pageType: ManaboPageType): Promise<Man
 async function extractDataElements(page: Page): Promise<ManaboDataElement[]> {
     return await page.evaluate(() => {
         const dataElements: any[] = [];
-        const headings = document.querySelectorAll('h1, h2, h3');
+        const headings = document.querySelectorAll("h1, h2, h3");
         headings.forEach((heading, index) => {
-            const text = heading.textContent?.trim() || '';
+            const text = heading.textContent?.trim() || "";
             if (text) {
                 dataElements.push({
-                    type: 'text',
+                    type: "text",
                     selector: `${heading.tagName.toLowerCase()}:nth-of-type(${index + 1})`,
                     description: `Page heading: ${text.substring(0, 50)}`,
                     example: text.substring(0, 100),
@@ -95,10 +94,10 @@ async function extractDataElements(page: Page): Promise<ManaboDataElement[]> {
 async function extractNavigation(page: Page): Promise<ManaboNavigation[]> {
     return await page.evaluate(() => {
         const navigation: any[] = [];
-        const navLinks = document.querySelectorAll('nav a, .navigation a, .nav-menu a');
+        const navLinks = document.querySelectorAll("nav a, .navigation a, .nav-menu a");
         navLinks.forEach((link) => {
-            const text = link.textContent?.trim() || '';
-            const href = link.getAttribute('href') || '';
+            const text = link.textContent?.trim() || "";
+            const href = link.getAttribute("href") || "";
             if (text && href) {
                 navigation.push({
                     label: text,
@@ -115,29 +114,29 @@ async function extractNavigation(page: Page): Promise<ManaboNavigation[]> {
 async function analyzePageStructure(page: Page, pageType: ManaboPageType): Promise<ManaboPageStructure> {
     const commonSelectors = await page.evaluate(() => {
         const selectors: Record<string, string> = {};
-        if (document.querySelector('nav') || document.querySelector('.navigation')) {
-            selectors.navigation = 'nav, .navigation, .nav-menu';
+        if (document.querySelector("nav") || document.querySelector(".navigation")) {
+            selectors.navigation = "nav, .navigation, .nav-menu";
         }
-        if (document.querySelector('header') || document.querySelector('.header')) {
-            selectors.header = 'header, .header, .page-header';
+        if (document.querySelector("header") || document.querySelector(".header")) {
+            selectors.header = "header, .header, .page-header";
         }
-        if (document.querySelector('main') || document.querySelector('.main-content')) {
-            selectors.mainContent = 'main, .main-content, .content-area';
+        if (document.querySelector("main") || document.querySelector(".main-content")) {
+            selectors.mainContent = "main, .main-content, .content-area";
         }
-        if (document.querySelector('footer') || document.querySelector('.footer')) {
-            selectors.footer = 'footer, .footer';
+        if (document.querySelector("footer") || document.querySelector(".footer")) {
+            selectors.footer = "footer, .footer";
         }
-        const forms = document.querySelectorAll('form');
+        const forms = document.querySelectorAll("form");
         if (forms.length > 0) {
-            selectors.forms = 'form';
+            selectors.forms = "form";
         }
         const buttons = document.querySelectorAll('button, input[type="button"], input[type="submit"]');
         if (buttons.length > 0) {
             selectors.buttons = 'button, input[type="button"], input[type="submit"]';
         }
-        const links = document.querySelectorAll('a[href]');
+        const links = document.querySelectorAll("a[href]");
         if (links.length > 0) {
-            selectors.links = 'a[href]';
+            selectors.links = "a[href]";
         }
         return selectors;
     });
@@ -165,8 +164,8 @@ async function analyzeManaboPage(url: string, includeScreenshot = false, include
 
     let screenshot: string | undefined;
     if (includeScreenshot) {
-        const buffer = await page.screenshot({ fullPage: true, type: 'png' });
-        screenshot = buffer.toString('base64');
+        const buffer = await page.screenshot({ fullPage: true, type: "png" });
+        screenshot = buffer.toString("base64");
     }
 
     let domContent: string | undefined;
@@ -195,7 +194,7 @@ async function analyzeManaboPage(url: string, includeScreenshot = false, include
 /**
  * Split large DOM content into chunks for processing
  */
-function chunkContent(content: string, options: ChunkOptions = {}): string[] {
+export function chunkContent(content: string, options: ChunkOptions = {}): string[] {
     const { maxChunkSize = 200 * 1024, overlap = 1000 } = options; // 200KB default
 
     if (content.length <= maxChunkSize) {

@@ -1,18 +1,17 @@
 #!/usr/bin/env bun
-/* eslint-disable functional/no-class */
-
-import { command, run, string, option, subcommands, flag, boolean, optional } from "cmd-ts";
+import { command, run, string, option, subcommands, flag, optional } from "cmd-ts";
 import { writeFile, mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { generateRequirements, generateBatchRequirements, requirementsCache } from "@chukyo-bunseki/requirements-agent/src/agent.js";
+import { loginToChukyo } from "@chukyo-bunseki/playwright-worker";
 
 // Helper function to ensure directory exists
 async function ensureDirectoryExists(filePath: string): Promise<void> {
     const dir = dirname(resolve(filePath));
     try {
         await mkdir(dir, { recursive: true });
-    } catch (error) {
+    } catch {
         // Directory might already exist, ignore error
     }
 }
@@ -37,10 +36,29 @@ const loginCommand = command({
         }),
     },
     handler: async ({ username, password }) => {
-        console.log("Starting login process...");
-        // TODO: Implement Playwright login logic
-        console.log(`Username: ${username ? "[PROVIDED]" : "[NOT PROVIDED]"}`);
-        console.log(`Password: ${password ? "[PROVIDED]" : "[NOT PROVIDED]"}`);
+        console.log("🔐 Starting login process...");
+
+        if (!username || !password) {
+            console.error("❌ Both username and password are required");
+            console.error("Usage: ./chukyo-cli login -u <username> -p <password>");
+            process.exit(1);
+        }
+
+        try {
+            const result = await loginToChukyo({ username, password });
+
+            if (result.success) {
+                console.log("✅ Login successful!");
+                console.log(`📁 Session state saved to: ${result.stateFile || "state.json"}`);
+                console.log("🎯 You can now run analysis commands");
+            } else {
+                console.error(`❌ Login failed: ${result.message}`);
+                process.exit(1);
+            }
+        } catch (error) {
+            console.error(`❌ Login error: ${error instanceof Error ? error.message : "Unknown error"}`);
+            process.exit(1);
+        }
     },
 });
 
@@ -249,12 +267,10 @@ const validateCommand = command({
         try {
             const bunVersion = await Bun.version;
             console.log(`✅ Bun version: ${bunVersion}`);
-        } catch (error) {
+        } catch  {
             console.log("❌ Bun: Not available");
             allValid = false;
         }
-
-
 
         // Check cache
         console.log(`✅ Cache: ${requirementsCache.size()} entries`);

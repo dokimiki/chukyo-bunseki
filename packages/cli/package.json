@@ -13,6 +13,8 @@
         "test": "bun test --coverage"
     },
     "dependencies": {
+        "@chukyo-bunseki/requirements-agent": "workspace:*",
+        "@chukyo-bunseki/mcp-service": "workspace:*",
         "cmd-ts": "^0.13.0"
     },
     "devDependencies": {

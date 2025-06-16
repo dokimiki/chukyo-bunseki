@@ -1,5 +1,29 @@
-```markdown
-# Chukyo Portal Wrapper 🏫✨
+`# Chukyo Portal Wrapper 🏫✨
+
+中京大学の
+* **Manabo**（授業・課題・成績・出席管理）
+* **ALBO**（各種申請／m.mail／お知らせ）
+
+をまとめて扱える "開発者向けラッパー" を **Bun + TypeScript + Playwright** で実装するモノレポです。
+CLI／MCP（Model-Context-Protocol）サービス／Gemini 要件定義エージェントを同梱し、
+スクリーンショット・DOM・ネットワークログを AI で解析できます。
+
+## 🆕 新機能: Requirements Agent
+
+**mcp-serviceを呼び出すrequirements-agent**を追加しました！
+
+- **MCP統合**: Model Context Protocol経由でManaboページ構造を詳細分析
+- **AI要件生成**: Google Gemini AIによる包括的な要件文書の自動生成
+- **バッチ処理**: 複数ページの一括分析
+- **CLI統合**: `chukyo-cli analyze`コマンドで簡単実行
+
+```bash
+# Manaboページの要件分析
+export GOOGLE_AI_API_KEY=your_api_key
+bun run chukyo-cli analyze --url "https://manabo.cnc.chukyo-u.ac.jp" --output requirements.md
+```
+
+---# Chukyo Portal Wrapper 🏫✨
 
 中京大学の
 * **Manabo**（授業・課題・成績・出席管理）

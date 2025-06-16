@@ -1,16 +1,20 @@
 /* eslint-disable functional/no-class */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { resolve, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
-import type { ManaboPageAnalysis, AnalyzeManaboPageResult, ManaboPageType } from "@chukyo-bunseki/mcp-service/src/types/manabo.js";
+import type {
+  ManaboPageAnalysis,
+  ManaboPageType,
+  ManaboPageStructure,
+  ManaboAction,
+  ManaboDataElement,
+  ManaboNavigation,
+} from "@chukyo-bunseki/mcp-service/src/types/manabo.js";
+import { createAuthenticatedContext } from "@chukyo-bunseki/playwright-worker";
+import type { Page } from "playwright";
 
 export interface RequirementsInput {
     screenUrl: string;
-    domContent?: string; // Made optional since we'll get this from MCP
+    domContent?: string; // Optional HTML content if already retrieved
     networkLogs?: any[];
 }
 
@@ -25,87 +29,168 @@ export interface ChunkOptions {
 }
 
 /**
- * MCP Client for connecting to Manabo analysis service
+ * Detect Manabo page type based on URL and title
  */
-class ManaboMCPClient {
-    private client: Client;
-    private transport: StdioClientTransport;
-    private isConnected = false;
-
-    constructor() {
-        // Find the workspace root from the current file location
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = dirname(__filename);
-        const workspaceRoot = resolve(__dirname, "../../../");
-        const mcpServerPath = join(workspaceRoot, "packages/mcp-service/dist/mcp-server.js");
-
-        this.transport = new StdioClientTransport({
-            command: "bun",
-            args: ["run", mcpServerPath],
-        });
-        this.client = new Client(
-            {
-                name: "requirements-agent",
-                version: "1.0.0",
-            },
-            {
-                capabilities: {},
-            }
-        );
+function detectPageType(url: string, title: string): ManaboPageType {
+    if (url.includes('/course/') || title.includes('科目') || title.includes('Course')) {
+        return ManaboPageType.COURSES;
     }
-
-    async connect(): Promise<void> {
-        if (this.isConnected) return;
-
-        await this.client.connect(this.transport);
-        this.isConnected = true;
+    if (url.includes('/assignment') || title.includes('課題') || title.includes('Assignment')) {
+        return ManaboPageType.ASSIGNMENTS;
     }
-
-    async disconnect(): Promise<void> {
-        if (!this.isConnected) return;
-
-        await this.client.close();
-        this.isConnected = false;
+    if (url.includes('/syllabus') || title.includes('シラバス') || title.includes('Syllabus')) {
+        return ManaboPageType.SYLLABUS;
     }
-
-    async analyzePage(url: string, includeScreenshot = false, includeDOM = true): Promise<ManaboPageAnalysis> {
-        await this.connect();
-
-        try {
-            const result = await this.client.callTool({
-                name: "analyze_manabo_page",
-                arguments: {
-                    url,
-                    includeScreenshot,
-                    includeDOM,
-                },
-            });
-
-            if (!result || !result.content || !Array.isArray(result.content)) {
-                throw new Error("Invalid response from MCP server");
-            }
-
-            const textContent = result.content.find((c: any) => c.type === "text")?.text;
-            if (!textContent) {
-                throw new Error("No text content found in MCP response");
-            }
-
-            const analysisResult: AnalyzeManaboPageResult = JSON.parse(textContent);
-
-            if (!analysisResult.success) {
-                throw new Error(analysisResult.error || "Analysis failed");
-            }
-
-            if (!analysisResult.analysis) {
-                throw new Error("No analysis data returned");
-            }
-
-            return analysisResult.analysis;
-        } catch (error) {
-            throw new Error(`MCP analysis failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-        }
+    if (url.includes('/grade') || title.includes('成績') || title.includes('Grade')) {
+        return ManaboPageType.GRADES;
     }
+    if (url.includes('/announcement') || title.includes('お知らせ') || title.includes('連絡')) {
+        return ManaboPageType.ANNOUNCEMENTS;
+    }
+    if (url.includes('/timetable') || title.includes('時間割') || title.includes('Time')) {
+        return ManaboPageType.TIMETABLE;
+    }
+    if (url === 'https://manabo.cnc.chukyo-u.ac.jp' || url.includes('/top') || title.includes('ホーム')) {
+        return ManaboPageType.TOP;
+    }
+    return ManaboPageType.OTHER;
 }
+
+async function extractActions(page: Page, pageType: ManaboPageType): Promise<ManaboAction[]> {
+    return await page.evaluate(() => {
+        const actions: any[] = [];
+        const submitButtons = document.querySelectorAll('button[type="submit"], input[type="submit"]');
+        submitButtons.forEach((button, index) => {
+            const text = button.textContent?.trim() || `Submit button ${index + 1}`;
+            actions.push({
+                type: 'click',
+                selector: `button[type="submit"]:nth-of-type(${index + 1}), input[type="submit"]:nth-of-type(${index + 1})`,
+                description: `Submit action: ${text}`,
+                required: true,
+            });
+        });
+        return actions;
+    }, pageType);
+}
+
+async function extractDataElements(page: Page): Promise<ManaboDataElement[]> {
+    return await page.evaluate(() => {
+        const dataElements: any[] = [];
+        const headings = document.querySelectorAll('h1, h2, h3');
+        headings.forEach((heading, index) => {
+            const text = heading.textContent?.trim() || '';
+            if (text) {
+                dataElements.push({
+                    type: 'text',
+                    selector: `${heading.tagName.toLowerCase()}:nth-of-type(${index + 1})`,
+                    description: `Page heading: ${text.substring(0, 50)}`,
+                    example: text.substring(0, 100),
+                });
+            }
+        });
+        return dataElements;
+    });
+}
+
+async function extractNavigation(page: Page): Promise<ManaboNavigation[]> {
+    return await page.evaluate(() => {
+        const navigation: any[] = [];
+        const navLinks = document.querySelectorAll('nav a, .navigation a, .nav-menu a');
+        navLinks.forEach((link) => {
+            const text = link.textContent?.trim() || '';
+            const href = link.getAttribute('href') || '';
+            if (text && href) {
+                navigation.push({
+                    label: text,
+                    selector: `a[href="${href}"]`,
+                    url: href,
+                    description: `Navigate to ${text}`,
+                });
+            }
+        });
+        return navigation;
+    });
+}
+
+async function analyzePageStructure(page: Page, pageType: ManaboPageType): Promise<ManaboPageStructure> {
+    const commonSelectors = await page.evaluate(() => {
+        const selectors: Record<string, string> = {};
+        if (document.querySelector('nav') || document.querySelector('.navigation')) {
+            selectors.navigation = 'nav, .navigation, .nav-menu';
+        }
+        if (document.querySelector('header') || document.querySelector('.header')) {
+            selectors.header = 'header, .header, .page-header';
+        }
+        if (document.querySelector('main') || document.querySelector('.main-content')) {
+            selectors.mainContent = 'main, .main-content, .content-area';
+        }
+        if (document.querySelector('footer') || document.querySelector('.footer')) {
+            selectors.footer = 'footer, .footer';
+        }
+        const forms = document.querySelectorAll('form');
+        if (forms.length > 0) {
+            selectors.forms = 'form';
+        }
+        const buttons = document.querySelectorAll('button, input[type="button"], input[type="submit"]');
+        if (buttons.length > 0) {
+            selectors.buttons = 'button, input[type="button"], input[type="submit"]';
+        }
+        const links = document.querySelectorAll('a[href]');
+        if (links.length > 0) {
+            selectors.links = 'a[href]';
+        }
+        return selectors;
+    });
+
+    const actions = await extractActions(page, pageType);
+    const dataElements = await extractDataElements(page);
+    const navigation = await extractNavigation(page);
+
+    return {
+        selectors: commonSelectors,
+        actions,
+        dataElements,
+        navigation,
+    };
+}
+
+async function analyzeManaboPage(url: string, includeScreenshot = false, includeDOM = true): Promise<ManaboPageAnalysis> {
+    const context = await createAuthenticatedContext();
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForTimeout(2000);
+
+    const title = await page.title();
+    const pageType = detectPageType(url, title);
+
+    let screenshot: string | undefined;
+    if (includeScreenshot) {
+        const buffer = await page.screenshot({ fullPage: true, type: 'png' });
+        screenshot = buffer.toString('base64');
+    }
+
+    let domContent: string | undefined;
+    if (includeDOM) {
+        domContent = await page.content();
+    }
+
+    const structure = await analyzePageStructure(page, pageType);
+
+    await page.close();
+    await context.close();
+
+    return {
+        url,
+        title,
+        pageType,
+        structure,
+        screenshot,
+        domContent,
+        timestamp: new Date().toISOString(),
+    };
+}
+
+/**
 
 /**
  * Split large DOM content into chunks for processing
@@ -139,7 +224,7 @@ function chunkContent(content: string, options: ChunkOptions = {}): string[] {
 }
 
 /**
- * Generate requirements documentation using MCP service and Gemini AI
+ * Generate requirements documentation using Playwright and Gemini AI
  */
 export async function generateRequirements(input: RequirementsInput, apiKey?: string): Promise<RequirementsOutput> {
     const key = apiKey || process.env.GOOGLE_AI_API_KEY;
@@ -148,13 +233,11 @@ export async function generateRequirements(input: RequirementsInput, apiKey?: st
         throw new Error("GOOGLE_AI_API_KEY environment variable is required");
     }
 
-    const mcpClient = new ManaboMCPClient();
-
     try {
-        // Get Manabo page analysis from MCP service
-        const analysis = await mcpClient.analyzePage(input.screenUrl, false, true);
+        // Analyze page using Playwright
+        const analysis = await analyzeManaboPage(input.screenUrl, false, true);
 
-        // Use the DOM content from MCP analysis or fallback to input
+        // Use the DOM content from analysis or fallback to input
         const domContent = analysis.domContent || input.domContent || "";
 
         const genAI = new GoogleGenerativeAI(key);
@@ -221,13 +304,11 @@ Make use of the Manabo-specific analysis data to provide accurate selectors and 
         }
     } catch (error) {
         throw new Error(`Requirements generation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    } finally {
-        await mcpClient.disconnect();
     }
 }
 
 /**
- * Generate requirements for a batch of URLs using MCP service
+ * Generate requirements for a batch of URLs
  */
 export async function generateBatchRequirements(
     urls: string[],
@@ -252,7 +333,7 @@ export async function generateBatchRequirements(
 }
 
 /**
- * Enhanced cache implementation with MCP analysis data
+ * Enhanced cache implementation with analysis data
  */
 export class RequirementsCache {
     private cache = new Map<string, { data: RequirementsOutput; timestamp: number }>();

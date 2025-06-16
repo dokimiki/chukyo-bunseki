@@ -4,7 +4,7 @@ import { test, expect, describe, beforeAll, afterAll } from "bun:test";
 import { generateRequirements, generateBatchRequirements, RequirementsCache } from "../src/agent.ts";
 import { ManaboPageType } from "@chukyo-bunseki/mcp-service/src/types/manabo.js";
 
-describe("Requirements generation with MCP service", () => {
+describe("Requirements generation", () => {
     test("generateRequirements should throw error without API key", async () => {
         const originalKey = process.env.GOOGLE_AI_API_KEY;
         delete process.env.GOOGLE_AI_API_KEY;
@@ -39,7 +39,7 @@ describe("Requirements generation with MCP service", () => {
     });
 
     test("generateRequirements should include manaboAnalysis in output", async () => {
-        // This would require a valid API key and MCP service running
+        // This would require a valid API key and network access
         // For now, we test the interface structure
         const input = {
             screenUrl: "https://manabo.cnc.chukyo-u.ac.jp",
@@ -67,7 +67,7 @@ describe("Requirements generation with MCP service", () => {
     });
 });
 
-describe("Enhanced RequirementsCache with MCP support", () => {
+describe("Enhanced RequirementsCache", () => {
     test("should store and retrieve cached data", () => {
         const cache = new RequirementsCache();
         const input = {

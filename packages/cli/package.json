@@ -8,14 +8,13 @@
         "chukyo-cli": "dist/index.js"
     },
     "scripts": {
-        "build": "bun build src/index.ts --outdir=dist --target=bun --external=@chukyo-bunseki/mcp-service --external=@chukyo-bunseki/requirements-agent",
+        "build": "bun build src/index.ts --outdir=dist --target=bun --external=@chukyo-bunseki/requirements-agent",
         "dev": "bun run src/index.ts",
         "demo": "bun demo.ts",
         "test": "bun test --coverage"
     },
     "dependencies": {
         "@chukyo-bunseki/requirements-agent": "workspace:*",
-        "@chukyo-bunseki/mcp-service": "workspace:*",
         "cmd-ts": "^0.13.0"
     },
     "devDependencies": {

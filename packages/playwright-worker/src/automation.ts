@@ -1,5 +1,6 @@
 import { BrowserContext, Page, Locator } from "playwright";
 import { createAuthenticatedContext } from "./login.js";
+import { envBoolean } from "./utils.js";
 
 export interface AutomationOptions {
     stateFile?: string;
@@ -36,7 +37,8 @@ export class ChkyuoAutomationWorker {
      * Initialize the automation worker with authenticated context
      */
     async initialize(): Promise<void> {
-        const { stateFile = "state.json", slowMo = 100, headless = true } = this.options;
+        const envHeadless = envBoolean('HEADLESS', true);
+        const { stateFile = "state.json", slowMo = 100, headless = envHeadless } = this.options;
 
         this.context = await createAuthenticatedContext(stateFile, headless);
         this.page = await this.context.newPage();

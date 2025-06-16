@@ -1,4 +1,5 @@
 import { chromium, Browser, BrowserContext, Page } from "playwright";
+import { envBoolean } from "./utils.js";
 
 export interface LoginOptions {
     username: string;
@@ -19,7 +20,8 @@ export interface LoginResult {
  * Saves session state to state.json on success
  */
 export async function loginToChukyoManabo(options: LoginOptions): Promise<LoginResult> {
-    const { username, password, headless = true, slowMo = 100, timeout = 30000 } = options;
+    const envHeadless = envBoolean('HEADLESS', true);
+    const { username, password, headless = envHeadless, slowMo = 100, timeout = 30000 } = options;
 
     let browser: Browser | null = null;
     let context: BrowserContext | null = null;
@@ -94,7 +96,7 @@ export async function loginToChukyoManabo(options: LoginOptions): Promise<LoginR
 /**
  * Create a new browser context with saved state
  */
-export async function createAuthenticatedContext(stateFile = "state.json", headless = true): Promise<BrowserContext> {
+export async function createAuthenticatedContext(stateFile = "state.json", headless = envBoolean('HEADLESS', true)): Promise<BrowserContext> {
     const browser = await chromium.launch({
         headless,
     });

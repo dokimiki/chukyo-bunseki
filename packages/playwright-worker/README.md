@@ -24,6 +24,8 @@ CHUKYO_PASSWORD=your_password
 
 # 要件分析用（オプション）
 GOOGLE_AI_API_KEY=your_gemini_api_key
+# Playwright 設定
+HEADLESS=true
 ```
 
 ## 使用方法

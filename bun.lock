@@ -5,14 +5,14 @@
       "name": "chukyo-bunseki",
       "devDependencies": {
         "@types/bun": "latest",
-        "@typescript-eslint/eslint-plugin": "^6.0.0",
-        "@typescript-eslint/parser": "^6.0.0",
-        "eslint": "^8.50.0",
+        "@typescript-eslint/eslint-plugin": "^6.21.0",
+        "@typescript-eslint/parser": "^6.21.0",
+        "eslint": "^8.57.1",
         "eslint-config-airbnb-base": "^15.0.0",
-        "eslint-plugin-import": "^2.28.0",
+        "eslint-plugin-import": "^2.31.0",
       },
       "peerDependencies": {
-        "typescript": "^5",
+        "typescript": "^5.8.3",
       },
     },
     "packages/cli": {
@@ -37,16 +37,16 @@
       "dependencies": {
         "@chukyo-bunseki/playwright-worker": "workspace:*",
         "@modelcontextprotocol/sdk": "^1.12.3",
-        "compression": "^1.7.4",
+        "compression": "^1.8.0",
         "cors": "^2.8.5",
-        "express": "^4.18.2",
+        "express": "^4.21.2",
       },
       "devDependencies": {
         "@types/bun": "latest",
-        "@types/compression": "^1.7.5",
-        "@types/cors": "^2.8.17",
-        "@types/express": "^4.17.21",
-        "typescript": "^5",
+        "@types/compression": "^1.8.1",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^4.17.23",
+        "typescript": "^5.8.3",
       },
     },
     "packages/playwright-worker": {
@@ -54,12 +54,12 @@
       "version": "1.0.0",
       "dependencies": {
         "@chukyo-bunseki/requirements-agent": "workspace:*",
-        "playwright": "^1.40.0",
+        "playwright": "^1.53.0",
       },
       "devDependencies": {
-        "@playwright/test": "^1.40.0",
+        "@playwright/test": "^1.53.0",
         "@types/bun": "latest",
-        "typescript": "^5",
+        "typescript": "^5.8.3",
       },
     },
     "packages/requirements-agent": {
@@ -72,7 +72,7 @@
       },
       "devDependencies": {
         "@types/bun": "latest",
-        "typescript": "^5",
+        "typescript": "^5.8.3",
       },
     },
   },

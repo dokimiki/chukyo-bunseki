@@ -16,12 +16,12 @@
         "playwright:install": "bunx playwright install"
     },
     "dependencies": {
-        "playwright": "^1.40.0",
+        "playwright": "^1.53.0",
         "@chukyo-bunseki/requirements-agent": "workspace:*"
     },
     "devDependencies": {
-        "@playwright/test": "^1.40.0",
+        "@playwright/test": "^1.53.0",
         "@types/bun": "latest",
-        "typescript": "^5"
+        "typescript": "^5.8.3"
     }
 }

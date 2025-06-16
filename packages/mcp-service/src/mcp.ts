@@ -66,6 +66,65 @@ export class ManaboMCPServer {
                             required: ["url"],
                         },
                     },
+                    {
+                        name: "take_screenshot",
+                        description: "Take a full page screenshot of a Manabo page",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                url: {
+                                    type: "string",
+                                    description: "URL of the page to screenshot",
+                                    default: "https://manabo.cnc.chukyo-u.ac.jp",
+                                },
+                            },
+                            required: ["url"],
+                        },
+                    },
+                    {
+                        name: "get_page_dom",
+                        description: "Get the HTML DOM content of a Manabo page",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                url: {
+                                    type: "string",
+                                    description: "URL of the page to get DOM from",
+                                    default: "https://manabo.cnc.chukyo-u.ac.jp",
+                                },
+                            },
+                            required: ["url"],
+                        },
+                    },
+                    {
+                        name: "monitor_network",
+                        description: "Monitor network requests (XHR/API calls) on a Manabo page",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                url: {
+                                    type: "string",
+                                    description: "URL of the page to monitor network requests",
+                                    default: "https://manabo.cnc.chukyo-u.ac.jp",
+                                },
+                                waitTime: {
+                                    type: "number",
+                                    description: "Time to wait for network requests in milliseconds",
+                                    default: 2000,
+                                },
+                            },
+                            required: ["url"],
+                        },
+                    },
+                    {
+                        name: "health_check",
+                        description: "Check the health status of the MCP server and browser context",
+                        inputSchema: {
+                            type: "object",
+                            properties: {},
+                            additionalProperties: false,
+                        },
+                    },
                 ],
             };
         });
@@ -75,6 +134,25 @@ export class ManaboMCPServer {
             if (request.params.name === "analyze_manabo_page") {
                 const args = request.params.arguments as unknown as AnalyzeManaboPageArgs;
                 return await this.analyzeManaboPage(args);
+            }
+
+            if (request.params.name === "take_screenshot") {
+                const args = request.params.arguments as { url: string };
+                return await this.takeScreenshot(args);
+            }
+
+            if (request.params.name === "get_page_dom") {
+                const args = request.params.arguments as { url: string };
+                return await this.getPageDOM(args);
+            }
+
+            if (request.params.name === "monitor_network") {
+                const args = request.params.arguments as { url: string; waitTime?: number };
+                return await this.monitorNetwork(args);
+            }
+
+            if (request.params.name === "health_check") {
+                return await this.healthCheck();
             }
 
             throw new Error(`Unknown tool: ${request.params.name}`);
@@ -395,6 +473,349 @@ export class ManaboMCPServer {
 
             console.error("Login successful, creating authenticated context...");
             return await createAuthenticatedContext();
+        }
+    }
+
+    private async takeScreenshot(args: { url: string }): Promise<CallToolResult> {
+        try {
+            if (!this.globalContext) {
+                this.globalContext = await this.ensureAuthenticated();
+            }
+
+            const page = await this.globalContext.newPage();
+
+            try {
+                await page.goto(args.url);
+
+                // Check if we need to re-authenticate
+                if (page.url().includes("auth") || page.url().includes("login") || page.url().includes("shibboleth")) {
+                    console.error("Authentication required, re-authenticating...");
+                    await this.globalContext.close();
+                    this.globalContext = await this.ensureAuthenticated();
+                    await page.close();
+                    const newPage = await this.globalContext.newPage();
+                    await newPage.goto(args.url);
+
+                    const screenshot = await newPage.screenshot({
+                        fullPage: true,
+                        type: "png",
+                    });
+
+                    await newPage.close();
+
+                    return {
+                        content: [
+                            {
+                                type: "image",
+                                data: screenshot.toString("base64"),
+                                mimeType: "image/png",
+                            },
+                        ],
+                    };
+                }
+
+                const screenshot = await page.screenshot({
+                    fullPage: true,
+                    type: "png",
+                });
+
+                await page.close();
+
+                return {
+                    content: [
+                        {
+                            type: "image",
+                            data: screenshot.toString("base64"),
+                            mimeType: "image/png",
+                        },
+                    ],
+                };
+            } catch (error) {
+                await page.close();
+                throw error;
+            }
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify(
+                            {
+                                error: "Failed to take screenshot",
+                                message: error instanceof Error ? error.message : "Unknown error",
+                            },
+                            null,
+                            2
+                        ),
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+
+    private async getPageDOM(args: { url: string }): Promise<CallToolResult> {
+        try {
+            if (!this.globalContext) {
+                this.globalContext = await this.ensureAuthenticated();
+            }
+
+            const page = await this.globalContext.newPage();
+
+            try {
+                await page.goto(args.url);
+
+                // Check if we need to re-authenticate
+                if (page.url().includes("auth") || page.url().includes("login") || page.url().includes("shibboleth")) {
+                    console.error("Authentication required, re-authenticating...");
+                    await this.globalContext.close();
+                    this.globalContext = await this.ensureAuthenticated();
+                    await page.close();
+                    const newPage = await this.globalContext.newPage();
+                    await newPage.goto(args.url);
+
+                    const content = await newPage.content();
+                    await newPage.close();
+
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: content,
+                            },
+                        ],
+                    };
+                }
+
+                const content = await page.content();
+                await page.close();
+
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: content,
+                        },
+                    ],
+                };
+            } catch (error) {
+                await page.close();
+                throw error;
+            }
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify(
+                            {
+                                error: "Failed to get DOM",
+                                message: error instanceof Error ? error.message : "Unknown error",
+                            },
+                            null,
+                            2
+                        ),
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+
+    private async monitorNetwork(args: { url: string; waitTime?: number }): Promise<CallToolResult> {
+        try {
+            if (!this.globalContext) {
+                this.globalContext = await this.ensureAuthenticated();
+            }
+
+            const page = await this.globalContext.newPage();
+            const networkLogs: Array<{
+                url: string;
+                method: string;
+                status?: number;
+                timestamp: string;
+                headers?: Record<string, string>;
+            }> = [];
+
+            try {
+                // Intercept network requests
+                page.route("**/api/**", (route) => {
+                    const request = route.request();
+                    networkLogs.push({
+                        url: request.url(),
+                        method: request.method(),
+                        timestamp: new Date().toISOString(),
+                        headers: request.headers(),
+                    });
+                    route.continue();
+                });
+
+                // Also listen to response events for status codes
+                page.on("response", (response) => {
+                    if (response.url().includes("/api/")) {
+                        const log = networkLogs.find((log) => log.url === response.url());
+                        if (log) {
+                            log.status = response.status();
+                        }
+                    }
+                });
+
+                await page.goto(args.url);
+
+                // Check if we need to re-authenticate
+                if (page.url().includes("auth") || page.url().includes("login") || page.url().includes("shibboleth")) {
+                    console.error("Authentication required, re-authenticating...");
+                    await this.globalContext.close();
+                    this.globalContext = await this.ensureAuthenticated();
+                    await page.close();
+                    const newPage = await this.globalContext.newPage();
+
+                    // Re-setup network monitoring on new page
+                    const newNetworkLogs: typeof networkLogs = [];
+                    newPage.route("**/api/**", (route) => {
+                        const request = route.request();
+                        newNetworkLogs.push({
+                            url: request.url(),
+                            method: request.method(),
+                            timestamp: new Date().toISOString(),
+                            headers: request.headers(),
+                        });
+                        route.continue();
+                    });
+
+                    newPage.on("response", (response) => {
+                        if (response.url().includes("/api/")) {
+                            const log = newNetworkLogs.find((log) => log.url === response.url());
+                            if (log) {
+                                log.status = response.status();
+                            }
+                        }
+                    });
+
+                    await newPage.goto(args.url);
+                    await newPage.waitForTimeout(args.waitTime || 2000);
+                    await newPage.close();
+
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: JSON.stringify(
+                                    {
+                                        networkLogs: newNetworkLogs,
+                                        count: newNetworkLogs.length,
+                                        url: args.url,
+                                        waitTime: args.waitTime || 2000,
+                                    },
+                                    null,
+                                    2
+                                ),
+                            },
+                        ],
+                    };
+                }
+
+                // Wait for network requests to complete
+                await page.waitForTimeout(args.waitTime || 2000);
+                await page.close();
+
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: JSON.stringify(
+                                {
+                                    networkLogs,
+                                    count: networkLogs.length,
+                                    url: args.url,
+                                    waitTime: args.waitTime || 2000,
+                                },
+                                null,
+                                2
+                            ),
+                        },
+                    ],
+                };
+            } catch (error) {
+                await page.close();
+                throw error;
+            }
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify(
+                            {
+                                error: "Failed to monitor network",
+                                message: error instanceof Error ? error.message : "Unknown error",
+                            },
+                            null,
+                            2
+                        ),
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+
+    private async healthCheck(): Promise<CallToolResult> {
+        try {
+            const status = {
+                server: "healthy",
+                timestamp: new Date().toISOString(),
+                browserContext: this.globalContext ? "available" : "not_initialized",
+                authentication: "unknown",
+            };
+
+            // Test browser context if available
+            if (this.globalContext) {
+                try {
+                    const page = await this.globalContext.newPage();
+                    await page.goto("https://manabo.cnc.chukyo-u.ac.jp");
+                    const title = await page.title();
+                    await page.close();
+
+                    if (title.includes("Manabo")) {
+                        status.authentication = "valid";
+                    } else if (title.includes("Login") || title.includes("ログイン")) {
+                        status.authentication = "required";
+                    } else {
+                        status.authentication = "unknown";
+                    }
+                } catch (contextError) {
+                    status.authentication = "failed";
+                    status.browserContext = `error: ${contextError instanceof Error ? contextError.message : "Unknown error"}`;
+                }
+            }
+
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify(status, null, 2),
+                    },
+                ],
+            };
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify(
+                            {
+                                server: "error",
+                                error: error instanceof Error ? error.message : "Unknown error",
+                                timestamp: new Date().toISOString(),
+                            },
+                            null,
+                            2
+                        ),
+                    },
+                ],
+                isError: true,
+            };
         }
     }
 }

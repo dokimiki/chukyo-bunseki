@@ -4,7 +4,7 @@
  * This server provides tools for analyzing Manabo page structures via Model Context Protocol
  */
 
-import { createManaboMCPServer } from "./mcp.js";
+import { createManaboMCPServer } from "./mcp";
 
 async function main(): Promise<void> {
     try {

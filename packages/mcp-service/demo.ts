@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable functional/no-class */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 /**
  * Demo script for testing the MCP Service functionality
@@ -95,6 +95,37 @@ async function testPageTypeDetection(): Promise<void> {
 }
 
 /**
+ * Test MCP Server tools (simulated - normally would use MCP client)
+ */
+async function testMCPServerTools(): Promise<void> {
+    console.log("\n=== Testing MCP Server Tools (Simulation) ===");
+
+    console.log("Available MCP tools:");
+    console.log("1. analyze_manabo_page - Full page analysis with selectors and structure");
+    console.log("2. take_screenshot - Full page screenshot capture");
+    console.log("3. get_page_dom - HTML DOM content extraction");
+    console.log("4. monitor_network - Network request monitoring (XHR/API calls)");
+
+    console.log("\n📋 MCP Tool Examples:");
+    console.log("# Full page analysis");
+    console.log("analyze_manabo_page({ url: 'https://manabo.cnc.chukyo-u.ac.jp', includeScreenshot: true, includeDOM: true })");
+
+    console.log("\n# Screenshot only");
+    console.log("take_screenshot({ url: 'https://manabo.cnc.chukyo-u.ac.jp' })");
+
+    console.log("\n# DOM content only");
+    console.log("get_page_dom({ url: 'https://manabo.cnc.chukyo-u.ac.jp' })");
+
+    console.log("\n# Network monitoring");
+    console.log("monitor_network({ url: 'https://manabo.cnc.chukyo-u.ac.jp', waitTime: 3000 })");
+
+    console.log("\n💡 To test MCP server:");
+    console.log("1. Start MCP server: bun dev:mcp");
+    console.log("2. Use MCP client to connect and invoke tools");
+    console.log("3. MCP server runs on stdio transport (not HTTP)");
+}
+
+/**
  * Display usage examples
  */
 function showUsageExamples(): void {
@@ -161,6 +192,9 @@ async function main(): Promise<void> {
         console.log("\n❌ Express server not running at http://localhost:3000");
         console.log("   Start with: bun dev");
     }
+
+    // Show MCP server information
+    await testMCPServerTools();
 
     console.log("\n🏁 Demo completed");
     console.log("\nNext steps:");

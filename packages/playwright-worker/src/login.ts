@@ -23,6 +23,9 @@ export async function loginToChukyoManabo(options: LoginOptions): Promise<LoginR
     const envHeadless = envBoolean("HEADLESS", true);
     const { username, password, headless = envHeadless, slowMo = 100, timeout = 30000 } = options;
 
+    // Load state file path from environment or fallback
+    const stateFile = process.env.STATE_FILE ?? "state.json";
+
     let browser: Browser | null = null;
     let context: BrowserContext | null = null;
     let page: Page | null = null;
@@ -62,7 +65,6 @@ export async function loginToChukyoManabo(options: LoginOptions): Promise<LoginR
         await page.waitForURL(/manabo\.cnc/, { timeout });
 
         // Save session state
-        const stateFile = "state.json";
         await context.storageState({ path: stateFile });
 
         // Save trace
@@ -96,7 +98,10 @@ export async function loginToChukyoManabo(options: LoginOptions): Promise<LoginR
 /**
  * Create a new browser context with saved state
  */
-export async function createAuthenticatedContext(stateFile = "state.json", headless = envBoolean("HEADLESS", true)): Promise<BrowserContext> {
+export async function createAuthenticatedContext(
+    stateFile: string = process.env.STATE_FILE ?? "state.json",
+    headless = envBoolean("HEADLESS", true)
+): Promise<BrowserContext> {
     // Check if state file exists
     const fs = await import("fs/promises");
     try {

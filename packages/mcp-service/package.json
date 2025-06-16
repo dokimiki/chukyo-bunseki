@@ -11,7 +11,8 @@
         "dev:mcp": "bun run src/mcp-server.ts",
         "start": "bun run dist/server.js",
         "start:mcp": "bun run dist/mcp-server.js",
-        "test": "bun test --coverage"
+        "test": "bun test --coverage",
+        "inspect": "bunx @modelcontextprotocol/inspector bun run src/mcp-server.ts"
     },
     "dependencies": {
         "@chukyo-bunseki/playwright-worker": "workspace:*",

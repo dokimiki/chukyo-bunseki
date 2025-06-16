@@ -41,7 +41,7 @@ async function demoPortalWorker() {
 
     try {
         const worker = await createPortalWorker({
-            stateFile: "state.json",
+            stateFile: process.env.STATE_FILE ?? "state.json",
             headless: false,
             slowMo: 1000,
         });
@@ -68,7 +68,7 @@ async function demoIntegrationWorker() {
 
     try {
         const worker = await createIntegrationWorker({
-            stateFile: "state.json",
+            stateFile: process.env.STATE_FILE ?? "state.json",
             geminiApiKey: process.env.GOOGLE_AI_API_KEY,
         });
 

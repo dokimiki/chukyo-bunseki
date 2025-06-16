@@ -52,19 +52,9 @@ async function demoPortalWorker() {
         const topResult = await worker.goToPortalTop();
         console.log("Portal top:", topResult.success ? "✅" : "❌", topResult.message);
 
-        // Try to get student information
-        const studentInfo = await worker.getStudentInfo();
-        if (studentInfo) {
-            console.log("📋 Student Info:", studentInfo);
-        }
-
-        // Try to get courses
-        const courses = await worker.getRegisteredCourses();
-        console.log(`📚 Found ${courses.length} registered courses`);
-
-        // Try to get announcements
-        const announcements = await worker.getAnnouncements();
-        console.log(`📢 Found ${announcements.length} announcements`);
+        // get page html
+        const pageHTML = await worker.getPageHTML();
+        console.log("📄 Page HTML length:", pageHTML.length);
 
         await worker.cleanup();
         console.log("✅ Portal worker cleanup complete");
@@ -89,12 +79,6 @@ async function demoIntegrationWorker() {
         if (topAnalysis.success) {
             console.log("📊 Portal top analysis completed");
             console.log("📄 Requirements length:", topAnalysis.requirements.length);
-        }
-
-        // Analyze course registration page
-        const courseAnalysis = await worker.analyzeCourseRegistration();
-        if (courseAnalysis.success) {
-            console.log("📊 Course registration analysis completed");
         }
 
         await worker.cleanup();
@@ -147,5 +131,10 @@ async function main() {
 }
 
 if (require.main === module) {
-    main().catch(console.error);
+    main()
+        .catch(console.error)
+        .finally(() => {
+            console.log("Exiting demo script...");
+            process.exit();
+        });
 }

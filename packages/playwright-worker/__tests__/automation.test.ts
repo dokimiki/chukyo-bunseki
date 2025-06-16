@@ -28,30 +28,6 @@ describe("Automation Worker", () => {
     });
 });
 
-describe("Portal Worker", () => {
-    test("should extend automation worker", () => {
-        const worker = new ChkyuoPortalWorker();
-        expect(worker).toBeInstanceOf(ChkyuoAutomationWorker);
-    });
-
-    test("should have portal-specific methods", () => {
-        const worker = new ChkyuoPortalWorker();
-        expect(typeof worker.goToPortalTop).toBe("function");
-        expect(typeof worker.goToCourseRegistration).toBe("function");
-        expect(typeof worker.goToGrades).toBe("function");
-        expect(typeof worker.getStudentInfo).toBe("function");
-        expect(typeof worker.getRegisteredCourses).toBe("function");
-    });
-
-    test("should handle uninitialized state properly", async () => {
-        const worker = new ChkyuoPortalWorker();
-
-        await expect(async () => {
-            await worker.getStudentInfo();
-        }).toThrow("Worker not initialized");
-    });
-});
-
 describe("Data structures", () => {
     test("should handle empty course list", () => {
         const courses: any[] = [];

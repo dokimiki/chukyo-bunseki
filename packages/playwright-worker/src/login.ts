@@ -18,7 +18,7 @@ export interface LoginResult {
  * Login to Chukyo University Shibboleth authentication
  * Saves session state to state.json on success
  */
-export async function loginToChukyo(options: LoginOptions): Promise<LoginResult> {
+export async function loginToChukyoManabo(options: LoginOptions): Promise<LoginResult> {
     const { username, password, headless = true, slowMo = 100, timeout = 30000 } = options;
 
     let browser: Browser | null = null;
@@ -43,7 +43,7 @@ export async function loginToChukyo(options: LoginOptions): Promise<LoginResult>
         page.setDefaultTimeout(timeout);
 
         // Navigate to Manabo login
-        await page.goto("https://manabo.cnc.chukyo-u.ac.jp");
+        await page.goto("https://manabo.cnc.chukyo-u.ac.jp/auth/shibboleth/");
 
         // Wait for Shibboleth login form
         await page.waitForSelector("#username", { timeout });
@@ -54,7 +54,7 @@ export async function loginToChukyo(options: LoginOptions): Promise<LoginResult>
         await page.fill("#password", password);
 
         // Submit form
-        await page.click("input[type=\"submit\"], button[type=\"submit\"]");
+        await page.click("button#login");
 
         // Wait for successful navigation to manabo.cnc domain
         await page.waitForURL(/manabo\.cnc/, { timeout });
@@ -94,8 +94,10 @@ export async function loginToChukyo(options: LoginOptions): Promise<LoginResult>
 /**
  * Create a new browser context with saved state
  */
-export async function createAuthenticatedContext(stateFile = "state.json"): Promise<BrowserContext> {
-    const browser = await chromium.launch();
+export async function createAuthenticatedContext(stateFile = "state.json", headless = true): Promise<BrowserContext> {
+    const browser = await chromium.launch({
+        headless,
+    });
     const context = await browser.newContext({
         storageState: stateFile,
     });

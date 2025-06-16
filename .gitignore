@@ -22,7 +22,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Playwright specific
 state.json
-trace.zip
+*trace*.zip
 test-results/
 playwright-report/
 playwright/.cache/

@@ -36,9 +36,9 @@ export class ChkyuoAutomationWorker {
      * Initialize the automation worker with authenticated context
      */
     async initialize(): Promise<void> {
-        const { stateFile = "state.json", slowMo = 100 } = this.options;
+        const { stateFile = "state.json", slowMo = 100, headless = true } = this.options;
 
-        this.context = await createAuthenticatedContext(stateFile);
+        this.context = await createAuthenticatedContext(stateFile, headless);
         this.page = await this.context.newPage();
 
         if (slowMo) {
@@ -252,6 +252,50 @@ export class ChkyuoAutomationWorker {
         }
 
         return await this.page.evaluate(fn);
+    }
+
+    async getHTML(selector: string): Promise<string | null> {
+        if (!this.page) {
+            throw new Error("Worker not initialized. Call initialize() first.");
+        }
+        try {
+            const element = await this.page.$(selector);
+            if (!element) {
+                return null;
+            }
+            return await this.page.evaluate((el) => el.outerHTML, element);
+        } catch (error) {
+            console.error(`Failed to get HTML from ${selector}:`, error);
+            return null;
+        }
+    }
+
+    async getPageHTML(): Promise<string | null> {
+        return this.getHTML("html");
+    }
+
+    async getScriptFile(selector: string): Promise<string | null> {
+        if (!this.page) {
+            throw new Error("Worker not initialized. Call initialize() first.");
+        }
+        try {
+            const element = await this.page.$(selector);
+            if (!element) {
+                return null;
+            }
+            const src = await this.page.evaluate((el) => el.getAttribute("src"), element);
+            if (!src) {
+                return null;
+            }
+            const response = await this.page.goto(src);
+            if (!response || !response.ok()) {
+                throw new Error(`Failed to fetch script from ${src}`);
+            }
+            return await response.text();
+        } catch (error) {
+            console.error(`Failed to get script file from ${selector}:`, error);
+            return null;
+        }
     }
 
     /**

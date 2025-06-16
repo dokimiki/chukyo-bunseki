@@ -130,61 +130,6 @@ export class ChkyuoIntegrationWorker {
     }
 
     /**
-     * Analyze course registration page
-     */
-    async analyzeCourseRegistration(): Promise<PageAnalysisResult> {
-        return await this.actionAndAnalyze(() => this.worker.goToCourseRegistration());
-    }
-
-    /**
-     * Analyze grades page
-     */
-    async analyzeGrades(): Promise<PageAnalysisResult> {
-        return await this.actionAndAnalyze(() => this.worker.goToGrades());
-    }
-
-    /**
-     * Analyze syllabus page
-     */
-    async analyzeSyllabus(): Promise<PageAnalysisResult> {
-        return await this.actionAndAnalyze(() => this.worker.goToSyllabus());
-    }
-
-    /**
-     * Analyze announcements page
-     */
-    async analyzeAnnouncements(): Promise<PageAnalysisResult> {
-        return await this.actionAndAnalyze(() => this.worker.goToAnnouncements());
-    }
-
-    /**
-     * Perform a complete portal analysis
-     */
-    async analyzeCompletePortal(): Promise<{
-        top: PageAnalysisResult;
-        courses: PageAnalysisResult;
-        grades: PageAnalysisResult;
-        syllabus: PageAnalysisResult;
-        announcements: PageAnalysisResult;
-    }> {
-        const [top, courses, grades, syllabus, announcements] = await Promise.all([
-            this.analyzePortalTop(),
-            this.analyzeCourseRegistration(),
-            this.analyzeGrades(),
-            this.analyzeSyllabus(),
-            this.analyzeAnnouncements(),
-        ]);
-
-        return {
-            top,
-            courses,
-            grades,
-            syllabus,
-            announcements,
-        };
-    }
-
-    /**
      * Get access to the underlying worker for direct operations
      */
     getWorker(): ChkyuoPortalWorker {

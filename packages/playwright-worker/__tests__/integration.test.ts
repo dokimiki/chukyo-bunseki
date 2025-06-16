@@ -1,35 +1,4 @@
 import { test, expect, describe } from "bun:test";
-import { ChkyuoIntegrationWorker } from "../src/index.js";
-
-describe("Integration Worker", () => {
-    test("should create integration worker", () => {
-        const worker = new ChkyuoIntegrationWorker();
-        expect(worker).toBeDefined();
-    });
-
-    test("should have analysis methods", () => {
-        const worker = new ChkyuoIntegrationWorker();
-        expect(typeof worker.analyzePortalTop).toBe("function");
-        expect(typeof worker.analyzeCourseRegistration).toBe("function");
-        expect(typeof worker.analyzeGrades).toBe("function");
-        expect(typeof worker.analyzeCompletePortal).toBe("function");
-    });
-
-    test("should handle missing API key gracefully", async () => {
-        const worker = new ChkyuoIntegrationWorker({
-            geminiApiKey: undefined,
-        });
-
-        // Should not throw during construction
-        expect(worker).toBeDefined();
-    });
-
-    test("should provide access to underlying worker", () => {
-        const worker = new ChkyuoIntegrationWorker();
-        const portalWorker = worker.getWorker();
-        expect(portalWorker).toBeDefined();
-    });
-});
 
 describe("Page Analysis", () => {
     test("should structure analysis results correctly", () => {

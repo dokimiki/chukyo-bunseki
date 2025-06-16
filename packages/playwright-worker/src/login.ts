@@ -54,7 +54,7 @@ export async function loginToChukyo(options: LoginOptions): Promise<LoginResult>
         await page.fill("#password", password);
 
         // Submit form
-        await page.click('input[type="submit"], button[type="submit"]');
+        await page.click("input[type=\"submit\"], button[type=\"submit\"]");
 
         // Wait for successful navigation to manabo.cnc domain
         await page.waitForURL(/manabo\.cnc/, { timeout });

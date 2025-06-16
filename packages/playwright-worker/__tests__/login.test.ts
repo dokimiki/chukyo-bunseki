@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { loginToChukyo, createAuthenticatedContext } from "../src/login.ts";
+import { loginToChukyo, createAuthenticatedContext, ChkyuoAutomationWorker, ChkyuoPortalWorker } from "../src/index.js";
 
 describe("Login functionality", () => {
     test("loginToChukyo should handle empty credentials gracefully", async () => {
@@ -32,6 +32,34 @@ describe("Login functionality", () => {
         expect(result).toBeDefined();
         expect(typeof result.success).toBe("boolean");
         expect(typeof result.message).toBe("string");
+    });
+});
+
+describe("Automation Worker", () => {
+    test("should create automation worker class", () => {
+        const worker = new ChkyuoAutomationWorker();
+        expect(worker).toBeDefined();
+    });
+
+    test("should fail initialization without browser context", async () => {
+        const worker = new ChkyuoAutomationWorker();
+
+        // This should fail because we don't have authentication state
+        await expect(async () => {
+            await worker.initialize();
+        }).toThrow();
+    });
+});
+
+describe("Portal Worker", () => {
+    test("should create portal worker class", () => {
+        const worker = new ChkyuoPortalWorker();
+        expect(worker).toBeDefined();
+    });
+
+    test("should extend automation worker", () => {
+        const worker = new ChkyuoPortalWorker();
+        expect(worker).toBeInstanceOf(ChkyuoAutomationWorker);
     });
 });
 

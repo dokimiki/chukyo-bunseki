@@ -6,12 +6,26 @@
         "packages/*"
     ],
     "scripts": {
-        "build": "bun run --filter ./packages/* build",
-        "dev": "bun run --filter ./packages/* dev",
-        "test": "bun test --coverage",
+        "build": "cd packages/cli && bun run build && cd ../mcp-service && bun run build && cd ../playwright-worker && bun run build && cd ../requirements-agent && bun run build",
+        "build:script": "bun run scripts/build-all.js",
+        "build:cli": "cd packages/cli && bun run build",
+        "build:mcp": "cd packages/mcp-service && bun run build",
+        "build:playwright": "cd packages/playwright-worker && bun run build",
+        "build:requirements": "cd packages/requirements-agent && bun run build",
+        "dev": "bun run scripts/dev-all.js",
+        "dev:cli": "cd packages/cli && bun run dev",
+        "dev:mcp": "cd packages/mcp-service && bun run dev",
+        "dev:playwright": "cd packages/playwright-worker && bun run dev",
+        "dev:requirements": "cd packages/requirements-agent && bun run dev",
+        "test": "bun run scripts/test-all.js",
+        "test:root": "bun test --coverage",
+        "test:cli": "cd packages/cli && bun run test",
+        "test:mcp": "cd packages/mcp-service && bun run test",
+        "test:playwright": "cd packages/playwright-worker && bun run test",
+        "test:requirements": "cd packages/requirements-agent && bun run test",
         "lint": "eslint packages/*/src/**/*.ts",
         "lint:fix": "eslint packages/*/src/**/*.ts --fix",
-        "install:all": "bun install && bun run --filter ./packages/* install"
+        "install:all": "bun run scripts/install-all.js"
     },
     "devDependencies": {
         "@types/bun": "latest",

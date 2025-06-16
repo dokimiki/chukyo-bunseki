@@ -1,5 +1,3 @@
-/* eslint-disable functional/no-class */
-
 import { chromium, Browser, BrowserContext, Page } from "playwright";
 
 export interface LoginOptions {

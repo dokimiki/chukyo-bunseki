@@ -1,5 +1,3 @@
-/* eslint-disable functional/no-class */
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export interface RequirementsInput {
@@ -72,7 +70,7 @@ export async function generateRequirements(input: RequirementsInput, apiKey?: st
     try {
         // Handle large DOM content by chunking
         const domChunks = chunkContent(input.domContent);
-        let analysisResults: string[] = [];
+        const analysisResults: string[] = [];
 
         // Process each chunk
         for (let index = 0; index < domChunks.length; index++) {
@@ -151,6 +149,7 @@ Respond in JSON format:
  */
 export class RequirementsCache {
     private cache = new Map<string, { data: RequirementsOutput; timestamp: number }>();
+
     private readonly TTL = 24 * 60 * 60 * 1000; // 24 hours
 
     private generateHash(input: RequirementsInput): string {

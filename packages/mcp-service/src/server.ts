@@ -1,5 +1,3 @@
-/* eslint-disable functional/no-class */
-
 import express from "express";
 import compression from "compression";
 import cors from "cors";
@@ -133,7 +131,7 @@ app.get("/health", (req, res) => {
 });
 
 // Error handling middleware
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((error: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error("Unhandled error:", error);
     res.status(500).json({
         error: "Internal server error",

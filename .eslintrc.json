@@ -1,5 +1,5 @@
 {
-    "extends": ["airbnb-base", "@typescript-eslint/recommended"],
+    "extends": ["airbnb-base"],
     "parser": "@typescript-eslint/parser",
     "plugins": ["@typescript-eslint"],
     "env": {
@@ -11,8 +11,8 @@
         "sourceType": "module"
     },
     "rules": {
-        "indent": ["error", 2],
-        "quotes": ["error", "single"],
+        "indent": ["error", 4],
+        "quotes": ["error", "double"],
         "import/extensions": [
             "error",
             "ignorePackages",
@@ -21,6 +21,13 @@
             }
         ],
         "import/no-unresolved": "off",
-        "no-console": "off"
+        "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "object-curly-newline": "off",
+        "no-plusplus": "off",
+        "no-await-in-loop": "off",
+        "class-methods-use-this": "off",
+        "no-undef": "off",
+        "max-len": ["error", { "code": 120 }]
     }
 }

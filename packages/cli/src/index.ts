@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
-/* eslint-disable functional/no-class */
 
-import { command, run, string, option } from "cmd-ts";
+import { command, run, string, option, subcommands } from "cmd-ts";
 
 const loginCommand = command({
     name: "login",
@@ -39,8 +38,6 @@ const screenshotCommand = command({
         // TODO: Implement MCP service call
     },
 });
-
-import { subcommands } from "cmd-ts";
 
 const app = subcommands({
     name: "chukyo-cli",

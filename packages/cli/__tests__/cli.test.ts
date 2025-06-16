@@ -8,12 +8,22 @@ const execAsync = promisify(exec);
 
 describe("CLI Integration Tests", () => {
     test("CLI should show help", async () => {
-        const { stdout } = await execAsync("bun run dist/index.js --help");
-        expect(stdout).toContain("Chukyo University analysis tools");
-        expect(stdout).toContain("analyze");
-        expect(stdout).toContain("validate");
-        expect(stdout).toContain("cache");
-        expect(stdout).toContain("config");
+        try {
+            const { stdout } = await execAsync("bun run dist/index.js --help");
+            expect(stdout).toContain("Chukyo University analysis tools");
+            expect(stdout).toContain("analyze");
+            expect(stdout).toContain("validate");
+            expect(stdout).toContain("cache");
+            expect(stdout).toContain("config");
+        } catch (error: any) {
+            // cmd-ts exits with code 1 for help, which is expected
+            // Check that we still got the help output
+            expect(error.stdout).toContain("Chukyo University analysis tools");
+            expect(error.stdout).toContain("analyze");
+            expect(error.stdout).toContain("validate");
+            expect(error.stdout).toContain("cache");
+            expect(error.stdout).toContain("config");
+        }
     });
 
     test("CLI validate command should work", async () => {

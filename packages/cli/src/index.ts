@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable functional/no-class */
 
-import { command, run, string, option, subcommands, flag, boolean } from "cmd-ts";
+import { command, run, string, option, subcommands, flag, boolean, optional } from "cmd-ts";
 import { writeFile, mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { existsSync } from "node:fs";
@@ -49,13 +49,13 @@ const analyzeCommand = command({
     description: "Analyze Manabo page and generate requirements documentation via MCP service",
     args: {
         url: option({
-            type: string,
+            type: optional(string),
             long: "url",
             short: "u",
-            description: "Manabo page URL to analyze",
+            description: "Manabo page URL to analyze (required for single analysis)",
         }),
         output: option({
-            type: string,
+            type: optional(string),
             long: "output",
             short: "o",
             description: "Output file path for markdown results",
@@ -65,13 +65,13 @@ const analyzeCommand = command({
             description: "Analyze multiple URLs from stdin or file",
         }),
         batchFile: option({
-            type: string,
+            type: optional(string),
             long: "batch-file",
             short: "f",
             description: "File containing URLs to analyze (one per line)",
         }),
         apiKey: option({
-            type: string,
+            type: optional(string),
             long: "api-key",
             short: "k",
             description: "Google AI API key (or use GOOGLE_AI_API_KEY env var)",
@@ -152,7 +152,7 @@ const analyzeCommand = command({
                 }
             } else {
                 if (!url) {
-                    console.error("❌ URL is required for single analysis");
+                    console.log("❌ URL is required for single analysis");
                     process.exit(1);
                 }
 

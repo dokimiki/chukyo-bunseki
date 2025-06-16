@@ -8,8 +8,9 @@
         "chukyo-cli": "dist/index.js"
     },
     "scripts": {
-        "build": "bun build src/index.ts --outdir=dist --target=bun",
+        "build": "bun build src/index.ts --outdir=dist --target=bun --external=@chukyo-bunseki/mcp-service --external=@chukyo-bunseki/requirements-agent",
         "dev": "bun run src/index.ts",
+        "demo": "bun demo.ts",
         "test": "bun test --coverage"
     },
     "dependencies": {

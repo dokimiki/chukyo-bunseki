@@ -8,6 +8,69 @@
 CLI／MCP（Model-Context-Protocol）サービス／Gemini 要件定義エージェントを同梱し、
 スクリーンショット・DOM・ネットワークログを AI で解析できます。
 
+## 🚀 Quick Start with CLI
+
+The easiest way to use the requirements-agent is through the command-line interface:
+
+### Installation and Setup
+
+```bash
+# Clone and install dependencies
+git clone <this-repo>
+cd chukyo-bunseki
+bun install
+
+# Build the CLI
+cd packages/cli
+bun run build
+
+# Set your Google AI API key
+export GOOGLE_AI_API_KEY="your-api-key-here"
+```
+
+### Using the CLI
+
+The CLI is available through the `./chukyo-cli` wrapper script at the workspace root:
+
+```bash
+# Validate your environment
+./chukyo-cli validate
+
+# Analyze a single Manabo page
+./chukyo-cli analyze --url "https://manabo.cnc.chukyo-u.ac.jp/ct/home" --verbose
+
+# Save analysis to file
+./chukyo-cli analyze \
+  --url "https://manabo.cnc.chukyo-u.ac.jp/ct/lesson_123" \
+  --output requirements.md \
+  --verbose
+
+# Batch analysis from file
+echo "https://manabo.cnc.chukyo-u.ac.jp/ct/home
+https://manabo.cnc.chukyo-u.ac.jp/ct/lesson_123" > urls.txt
+
+./chukyo-cli analyze --batch-file urls.txt --output batch-results.md
+
+# Interactive batch analysis
+./chukyo-cli analyze --batch
+
+# Show configuration and examples
+./chukyo-cli config --examples
+
+# Manage cache
+./chukyo-cli cache --info
+./chukyo-cli cache --clear
+```
+
+### CLI Features
+
+- **🔍 Smart Analysis**: Leverages MCP service for deep Manabo page structure analysis
+- **🤖 AI-Powered**: Uses Google Gemini to generate comprehensive requirements documentation
+- **📦 Batch Processing**: Analyze multiple pages at once
+- **💾 Intelligent Caching**: 24-hour cache with smart invalidation
+- **📋 Rich Output**: Markdown format with detailed tables and workflows
+- **🛠️ Developer-Friendly**: Verbose mode, validation, and error handling
+
 ## 🆕 新機能: Requirements Agent
 
 **mcp-serviceを呼び出すrequirements-agent**を追加しました！

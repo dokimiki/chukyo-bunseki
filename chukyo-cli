@@ -1,0 +1,37 @@
+#!/usr/bin/env bun
+/* eslint-disable functional/no-class */
+
+/**
+ * Chukyo CLI Wrapper Script
+ *
+ * This script provides easy access to the chukyo-cli from the workspace root.
+ */
+
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+
+const WORKSPACE_ROOT = process.cwd();
+const CLI_PACKAGE = resolve(WORKSPACE_ROOT, "packages/cli");
+const CLI_DIST = resolve(CLI_PACKAGE, "dist/index.js");
+
+// Check if CLI is built
+if (!existsSync(CLI_DIST)) {
+    console.log("❌ CLI not built. Please run:");
+    console.log("   cd packages/cli && bun run build");
+    process.exit(1);
+}
+
+// Forward all arguments to the CLI
+const args = process.argv.slice(2);
+
+// Import and run the CLI
+const { spawn } = await import("node:child_process");
+
+const cliProcess = spawn("bun", ["run", CLI_DIST, ...args], {
+    cwd: CLI_PACKAGE,
+    stdio: "inherit",
+});
+
+cliProcess.on("close", (code) => {
+    process.exit(code || 0);
+});

@@ -1,5 +1,3 @@
-/* eslint-disable functional/no-class */
-
 /**
  * Manabo page analysis result
  */

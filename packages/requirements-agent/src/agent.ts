@@ -3,6 +3,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { resolve, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 import type { ManaboPageAnalysis, AnalyzeManaboPageResult, ManaboPageType } from "@chukyo-bunseki/mcp-service/src/types/manabo.js";
 
 export interface RequirementsInput {
@@ -30,9 +33,15 @@ class ManaboMCPClient {
     private isConnected = false;
 
     constructor() {
+        // Find the workspace root from the current file location
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
+        const workspaceRoot = resolve(__dirname, "../../../");
+        const mcpServerPath = join(workspaceRoot, "packages/mcp-service/dist/mcp-server.js");
+
         this.transport = new StdioClientTransport({
             command: "bun",
-            args: ["run", "@chukyo-bunseki/mcp-service/src/mcp-server.ts"],
+            args: ["run", mcpServerPath],
         });
         this.client = new Client(
             {

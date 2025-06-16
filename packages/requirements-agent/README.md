@@ -23,6 +23,8 @@ mcp-serviceを呼び出してManaboページの分析を行い、要件文書を
 
 ```bash
 export GOOGLE_AI_API_KEY=your_gemini_api_key
+# Optional: Specify Gemini model (defaults to gemini-1.5-flash)
+export GOOGLE_AI_MODEL=gemini-1.5-flash
 ```
 
 ## 使用方法

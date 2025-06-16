@@ -232,6 +232,9 @@ export async function generateRequirements(input: RequirementsInput, apiKey?: st
         throw new Error("GOOGLE_AI_API_KEY environment variable is required");
     }
 
+    // Get model name from environment variable or use default
+    const modelName = process.env.GOOGLE_AI_MODEL || "gemini-1.5-flash";
+
     try {
         // Analyze page using Playwright
         const analysis = await analyzeManaboPage(input.screenUrl, false, true);
@@ -241,7 +244,7 @@ export async function generateRequirements(input: RequirementsInput, apiKey?: st
 
         const genAI = new GoogleGenerativeAI(key);
         const model = genAI.getGenerativeModel({
-            model: "gemini-pro",
+            model: modelName,
             generationConfig: {
                 temperature: 0.7,
                 topK: 40,

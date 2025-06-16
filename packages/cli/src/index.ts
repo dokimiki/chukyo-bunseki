@@ -202,6 +202,7 @@ const analyzeCommand = command({
             console.error("❌ Analysis failed:", error);
             process.exit(1);
         }
+        process.exit(0);
     },
 });
 
@@ -267,7 +268,7 @@ const validateCommand = command({
         try {
             const bunVersion = await Bun.version;
             console.log(`✅ Bun version: ${bunVersion}`);
-        } catch  {
+        } catch {
             console.log("❌ Bun: Not available");
             allValid = false;
         }

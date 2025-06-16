@@ -26,6 +26,9 @@ bun run build
 
 # Set your Google AI API key
 export GOOGLE_AI_API_KEY="your-api-key-here"
+
+# Optional: Set specific Gemini model (defaults to gemini-1.5-flash)
+export GOOGLE_AI_MODEL="gemini-1.5-flash"
 ```
 
 ### Using the CLI

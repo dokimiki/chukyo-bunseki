@@ -1,0 +1,22 @@
+{
+    "name": "@chukyo-bunseki/cli",
+    "version": "1.0.0",
+    "type": "module",
+    "private": true,
+    "main": "dist/index.js",
+    "bin": {
+        "chukyo-cli": "dist/index.js"
+    },
+    "scripts": {
+        "build": "bun build src/index.ts --outdir=dist --target=bun",
+        "dev": "bun run src/index.ts",
+        "test": "bun test --coverage"
+    },
+    "dependencies": {
+        "cmd-ts": "^0.13.0"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5"
+    }
+}

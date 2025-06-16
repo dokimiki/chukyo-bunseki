@@ -1,0 +1,27 @@
+{
+    "name": "chukyo-bunseki",
+    "type": "module",
+    "private": true,
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "build": "bun run --filter ./packages/* build",
+        "dev": "bun run --filter ./packages/* dev",
+        "test": "bun test --coverage",
+        "lint": "eslint packages/*/src/**/*.ts",
+        "lint:fix": "eslint packages/*/src/**/*.ts --fix",
+        "install:all": "bun install && bun run --filter ./packages/* install"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "eslint": "^8.50.0",
+        "eslint-config-airbnb-base": "^15.0.0",
+        "eslint-plugin-import": "^2.28.0"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
+    }
+}

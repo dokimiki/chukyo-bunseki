@@ -1,0 +1,4 @@
+[install]
+production = false  # devDeps も常に入れる
+[run]
+hotReload = true

@@ -1,0 +1,23 @@
+{
+    "name": "@chukyo-bunseki/playwright-worker",
+    "version": "1.0.0",
+    "type": "module",
+    "private": true,
+    "main": "src/login.ts",
+    "exports": {
+        ".": "./src/login.ts"
+    },
+    "scripts": {
+        "build": "bun build src/login.ts --outdir=dist --target=bun --external=playwright",
+        "dev": "bun run src/login.ts",
+        "test": "bun test --coverage"
+    },
+    "dependencies": {
+        "playwright": "^1.40.0"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.40.0",
+        "@types/bun": "latest",
+        "typescript": "^5"
+    }
+}

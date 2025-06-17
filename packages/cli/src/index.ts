@@ -4,7 +4,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { generateRequirements, generateBatchRequirements, requirementsCache } from "@chukyo-bunseki/requirements-agent/src/agent.js";
-import { loginToChukyo } from "@chukyo-bunseki/playwright-worker";
+import { loginToChukyo, createAutomationWorker } from "@chukyo-bunseki/playwright-worker";
 
 // Helper function to ensure directory exists
 async function ensureDirectoryExists(filePath: string): Promise<void> {
@@ -311,6 +311,12 @@ const configCommand = command({
             console.log("# Interactive batch analysis");
             console.log("chukyo-cli analyze --batch");
             console.log("");
+            console.log("# Extract HTML structure");
+            console.log("chukyo-cli html --url https://manabo.cnc.chukyo-u.ac.jp/ct/page_123 --output page.html");
+            console.log("");
+            console.log("# Extract specific element HTML");
+            console.log("chukyo-cli html --url https://manabo.cnc.chukyo-u.ac.jp/ct/page_123 --selector 'main' --format pretty");
+            console.log("");
             console.log("# Validate environment");
             console.log("chukyo-cli validate");
             console.log("");
@@ -330,15 +336,123 @@ const configCommand = command({
     },
 });
 
+const htmlCommand = command({
+    name: "html",
+    description: "Extract HTML structure from a Manabo page",
+    args: {
+        url: option({
+            type: string,
+            long: "url",
+            short: "u",
+            description: "Manabo page URL to extract HTML from",
+        }),
+        output: option({
+            type: optional(string),
+            long: "output",
+            short: "o",
+            description: "Output file path for HTML results",
+        }),
+        selector: option({
+            type: optional(string),
+            long: "selector",
+            short: "s",
+            description: "CSS selector to extract specific element (default: full page)",
+        }),
+        format: option({
+            type: optional(string),
+            long: "format",
+            short: "f",
+            description: "Output format: html, dom, pretty (default: html)",
+        }),
+        verbose: flag({
+            long: "verbose",
+            short: "v",
+            description: "Enable verbose output",
+        }),
+    },
+    handler: async ({ url, output, selector, format, verbose }) => {
+        if (!url) {
+            console.error("❌ URL is required");
+            process.exit(1);
+        }
+
+        try {
+            if (verbose) console.log(`🌐 Connecting to ${url}...`);
+
+            const worker = await createAutomationWorker({
+                headless: true,
+                timeout: 30000,
+            });
+
+            const result = await worker.navigateTo(url);
+
+            if (!result.success) {
+                console.error(`❌ Failed to navigate to ${url}: ${result.message}`);
+                process.exit(1);
+            }
+
+            let htmlContent: string;
+
+            if (selector) {
+                const elementHTML = await worker.getHTML(selector);
+                if (!elementHTML) {
+                    console.error(`❌ Element with selector "${selector}" not found`);
+                    await worker.cleanup();
+                    process.exit(1);
+                }
+                htmlContent = elementHTML;
+            } else {
+                const pageHTML = await worker.getPageHTML();
+                if (!pageHTML) {
+                    console.error("❌ Failed to extract page HTML");
+                    await worker.cleanup();
+                    process.exit(1);
+                }
+                htmlContent = pageHTML;
+            }
+
+            // Format the output based on format option
+            let formattedContent = htmlContent;
+            if (format === "pretty") {
+                // Basic HTML formatting (could be enhanced with a proper formatter)
+                formattedContent = htmlContent.replace(/></g, ">\n<").replace(/^/gm, "  ").trim();
+            }
+
+            if (output) {
+                await ensureDirectoryExists(output);
+                await writeFile(output, formattedContent);
+                console.log(`✅ HTML saved to ${output}`);
+
+                if (verbose) {
+                    const stats = {
+                        size: formattedContent.length,
+                        lines: formattedContent.split("\n").length,
+                        elements: (formattedContent.match(/<[^/][^>]*>/g) || []).length,
+                    };
+                    console.log(`📊 File stats: ${stats.size} bytes, ${stats.lines} lines, ${stats.elements} elements`);
+                }
+            } else {
+                console.log("\n" + formattedContent);
+            }
+
+            await worker.cleanup();
+        } catch (error) {
+            console.error("❌ HTML extraction failed:", error instanceof Error ? error.message : "Unknown error");
+            process.exit(1);
+        }
+    },
+});
+
 const app = subcommands({
     name: "chukyo-cli",
-    description: "Chukyo University analysis tools with MCP service integration",
+    description: "Chukyo University analysis tools with requirements analysis and HTML extraction capabilities",
     cmds: {
         login: loginCommand,
         analyze: analyzeCommand,
         cache: cacheCommand,
         validate: validateCommand,
         config: configCommand,
+        html: htmlCommand,
     },
 });
 

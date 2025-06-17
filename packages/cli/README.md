@@ -6,10 +6,11 @@ A command-line interface for the requirements-agent package that helps analyze C
 
 - **Single Page Analysis**: Analyze individual Manabo pages and generate requirements documentation
 - **Batch Analysis**: Process multiple URLs from file or interactive input
+- **HTML Structure Extraction**: Extract HTML structure or specific elements from pages
 - **Cache Management**: Smart caching system for improved performance
 - **Validation**: Environment and configuration validation
 - **Verbose Output**: Detailed analysis information and debugging
-- **Flexible Output**: Console output or save to markdown files
+- **Flexible Output**: Console output or save to markdown/HTML files
 
 ## Installation
 
@@ -70,6 +71,20 @@ https://manabo.cnc.chukyo-u.ac.jp/ct/page_2" > urls.txt
 chukyo-cli analyze --batch-file urls.txt --output batch-results.md
 ```
 
+### HTML Structure Extraction
+
+```bash
+# Extract full page HTML
+chukyo-cli html --url "https://manabo.cnc.chukyo-u.ac.jp/ct/page_123" --output page.html
+
+# Extract specific element with pretty formatting
+chukyo-cli html \
+  --url "https://manabo.cnc.chukyo-u.ac.jp/ct/page_123" \
+  --selector "main" \
+  --format pretty \
+  --output main-content.html
+```
+
 ### Cache Management
 
 ```bash
@@ -110,6 +125,31 @@ chukyo-cli analyze -u "..." -o requirements.md
 
 # Batch from file
 chukyo-cli analyze -f urls.txt -o batch-results.md -v
+```
+
+### `chukyo-cli html`
+
+Extract HTML structure from Manabo pages.
+
+**Options:**
+- `--url, -u <url>`: Manabo page URL to extract HTML from
+- `--output, -o <file>`: Output file path for HTML results
+- `--selector, -s <selector>`: CSS selector to extract specific element
+- `--format, -f <format>`: Output format: html, dom, pretty (default: html)
+
+**Flags:**
+- `--verbose, -v`: Enable verbose output
+
+**Examples:**
+```bash
+# Extract full page HTML
+chukyo-cli html -u "https://manabo.cnc.chukyo-u.ac.jp/ct/home" -o page.html
+
+# Extract specific element with pretty formatting
+chukyo-cli html -u "..." -s "main" -f pretty -o main-content.html
+
+# Quick HTML inspection (output to console)
+chukyo-cli html -u "..." -s ".sidebar" -v
 ```
 
 ### `chukyo-cli validate`

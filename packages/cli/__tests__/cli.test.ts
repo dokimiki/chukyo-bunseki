@@ -15,6 +15,7 @@ describe("CLI Integration Tests", () => {
             expect(stdout).toContain("validate");
             expect(stdout).toContain("cache");
             expect(stdout).toContain("config");
+            expect(stdout).toContain("html");
         } catch (error) {
             // cmd-ts exits with code 1 for help, which is expected
             // Check that we still got the help output
@@ -23,6 +24,7 @@ describe("CLI Integration Tests", () => {
             expect(error.stdout).toContain("validate");
             expect(error.stdout).toContain("cache");
             expect(error.stdout).toContain("config");
+            expect(error.stdout).toContain("html");
         }
     });
 
@@ -55,6 +57,32 @@ describe("CLI Integration Tests", () => {
             await execAsync(`bun run ${cliPath} analyze`);
         } catch (error) {
             expect(error.stdout).toContain("URL is required");
+        }
+    });
+
+    test("CLI html command should show help", async () => {
+        try {
+            const { stdout } = await execAsync(`bun run ${cliPath} html --help`);
+            expect(stdout).toContain("Extract HTML structure");
+            expect(stdout).toContain("--url");
+            expect(stdout).toContain("--output");
+            expect(stdout).toContain("--selector");
+            expect(stdout).toContain("--format");
+        } catch (error) {
+            // cmd-ts exits with code 1 for help, which is expected
+            expect(error.stdout).toContain("Extract HTML structure");
+            expect(error.stdout).toContain("--url");
+            expect(error.stdout).toContain("--output");
+            expect(error.stdout).toContain("--selector");
+            expect(error.stdout).toContain("--format");
+        }
+    });
+
+    test("CLI html command should show proper error without URL", async () => {
+        try {
+            await execAsync(`bun run ${cliPath} html`);
+        } catch (error) {
+            expect(error.stderr).toContain("No value provided for --url");
         }
     });
 
